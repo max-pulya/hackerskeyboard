@@ -487,52 +487,38 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
         for (int i = 0; i < n; i++) {
             int attr = a.getIndex(i);
 
-            switch (attr) {
-            case R.styleable.LatinKeyboardBaseView_keyBackground:
+            
+            if(attr== R.styleable.LatinKeyboardBaseView_keyBackground)
                 mKeyBackground = a.getDrawable(attr);
-                break;
-            case R.styleable.LatinKeyboardBaseView_keyHysteresisDistance:
+            else if(attr== R.styleable.LatinKeyboardBaseView_keyHysteresisDistance)
                 mKeyHysteresisDistance = a.getDimensionPixelOffset(attr, 0);
-                break;
-            case R.styleable.LatinKeyboardBaseView_verticalCorrection:
+            else if(attr== R.styleable.LatinKeyboardBaseView_verticalCorrection)
                 mVerticalCorrection = a.getDimensionPixelOffset(attr, 0);
-                break;
-            case R.styleable.LatinKeyboardBaseView_keyTextSize:
+            else if(attr== R.styleable.LatinKeyboardBaseView_keyTextSize)
                 mKeyTextSize = a.getDimensionPixelSize(attr, 18);
-                break;
-            case R.styleable.LatinKeyboardBaseView_keyTextColor:
+            else if(attr== R.styleable.LatinKeyboardBaseView_keyTextColor)
                 mKeyTextColor = a.getColor(attr, 0xFF000000);
-                break;
-            case R.styleable.LatinKeyboardBaseView_keyHintColor:
+            else if(attr== R.styleable.LatinKeyboardBaseView_keyHintColor)
                 mKeyHintColor = a.getColor(attr, 0xFFBBBBBB);
-                break;
-            case R.styleable.LatinKeyboardBaseView_keyCursorColor:
+            else if(attr== R.styleable.LatinKeyboardBaseView_keyCursorColor)
                 mKeyCursorColor = a.getColor(attr, 0xFF000000);
-                break;
-            case R.styleable.LatinKeyboardBaseView_invertSymbols:
+            else if(attr== R.styleable.LatinKeyboardBaseView_invertSymbols)
                 mInvertSymbols = a.getBoolean(attr, false);
-                break;
-            case R.styleable.LatinKeyboardBaseView_recolorSymbols:
+            else if(attr== R.styleable.LatinKeyboardBaseView_recolorSymbols)
                 mRecolorSymbols = a.getBoolean(attr, false);
-                break;
-            case R.styleable.LatinKeyboardBaseView_labelTextSize:
+            else if(attr== R.styleable.LatinKeyboardBaseView_labelTextSize)
                 mLabelTextSize = a.getDimensionPixelSize(attr, 14);
-                break;
-            case R.styleable.LatinKeyboardBaseView_shadowColor:
+            else if(attr== R.styleable.LatinKeyboardBaseView_shadowColor)
                 mShadowColor = a.getColor(attr, 0);
-                break;
-            case R.styleable.LatinKeyboardBaseView_shadowRadius:
+            else if(attr== R.styleable.LatinKeyboardBaseView_shadowRadius)
                 mShadowRadius = a.getFloat(attr, 0f);
-                break;
-            // TODO: Use Theme (android.R.styleable.Theme_backgroundDimAmount)
-            case R.styleable.LatinKeyboardBaseView_backgroundDimAmount:
+            // TODO) Use Theme (android.R.styleable.Theme_backgroundDimAmount)
+            else if(attr== R.styleable.LatinKeyboardBaseView_backgroundDimAmount)
                 mBackgroundDimAmount = a.getFloat(attr, 0.5f);
-                break;
-            case R.styleable.LatinKeyboardBaseView_backgroundAlpha:
+            else if(attr== R.styleable.LatinKeyboardBaseView_backgroundAlpha)
                 mBackgroundAlpha = a.getInteger(attr, 255);
-                break;
-            //case android.R.styleable.
-            case R.styleable.LatinKeyboardBaseView_keyTextStyle:
+            //else if(attr== android.R.styleable.
+            else if(attr== R.styleable.LatinKeyboardBaseView_keyTextStyle){
                 int textStyle = a.getInt(attr, 0);
                 switch (textStyle) {
                     case 0:
@@ -544,12 +530,10 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
                     default:
                         mKeyTextStyle = Typeface.defaultFromStyle(textStyle);
                         break;
-                }
-                break;
-            case R.styleable.LatinKeyboardBaseView_symbolColorScheme:
+                }}
+            else if(attr==R.styleable.LatinKeyboardBaseView_symbolColorScheme)
                 mSymbolColorScheme = a.getInt(attr, 0);
-                break;
-            }
+            
         }
 
         final Resources res = getResources();

@@ -195,6 +195,10 @@ public class LatinIME extends InputMethodService implements
     private boolean mModAlt;
     private boolean mModMeta;
     private boolean mModFn;
+
+    //*// added by Pulya Max
+    private boolean mModsPressed=false;
+
     // Saved shift state when leaving alphabet mode, or when applying multitouch shift
     private int mSavedShiftState;
     private boolean mPasswordText;
@@ -674,7 +678,7 @@ public class LatinIME extends InputMethodService implements
                 mLanguageSwitcher.loadLocales(PreferenceManager
                         .getDefaultSharedPreferences(this));
                 mLanguageSwitcher.setSystemLocale(conf.locale);
-                toggleLanguage(true, true);
+                toggleLanguage(true, true,false);
             } else {
                 reloadKeyboards();
             }
@@ -775,7 +779,7 @@ public class LatinIME extends InputMethodService implements
 
         if (mRefreshKeyboardRequired) {
             mRefreshKeyboardRequired = false;
-            toggleLanguage(true, true);
+            toggleLanguage(true, true,false);
         }
 
         mKeyboardSwitcher.makeKeyboards(false);
@@ -2001,10 +2005,10 @@ public class LatinIME extends InputMethodService implements
             mComposeBuffer.clear();
             break;
         case LatinKeyboardView.KEYCODE_NEXT_LANGUAGE:
-            toggleLanguage(false, true);
+            toggleLanguage(false, true,false);
             break;
         case LatinKeyboardView.KEYCODE_PREV_LANGUAGE:
-            toggleLanguage(false, false);
+            toggleLanguage(false, false,false);
             break;
         case LatinKeyboardView.KEYCODE_VOICE:
             if (mVoiceRecognitionTrigger.isInstalled()) {
@@ -2178,32 +2182,52 @@ public class LatinIME extends InputMethodService implements
         mJustRevertedSeparator = null;
         ic.endBatchEdit();
     }
-
+    //*// Patched by Pulya Max(added force english when modifier keys are pressed) //*//
+    private void p_max_check_mkeys(){
+        if (!mModsPressed&&(mModCtrl||mModAlt||mModMeta)&&!mModFn){
+            mModsPressed=true;
+            toggleLanguage(false,false,true);}
+        if ((!mModCtrl&&!mModAlt&&!mModMeta)&&!mModFn){
+            mModsPressed=false;
+            toggleLanguage(true,false,true);}
+    }
+    private void p_max_set_indicators(){
+        mKeyboardSwitcher.setCtrlIndicator(mModCtrl);
+        mKeyboardSwitcher.setAltIndicator(mModAlt);
+        mKeyboardSwitcher.setMetaIndicator(mModMeta);
+    }
     private void setModCtrl(boolean val) {
+
         // Log.i("LatinIME", "setModCtrl "+ mModCtrl + "->" + val + ", chording=" + mCtrlKeyState.isChording());
-        mKeyboardSwitcher.setCtrlIndicator(val);
+        System.out.println("mModCtrl="+val);
         mModCtrl = val;
+        p_max_check_mkeys();
+        p_max_set_indicators();
     }
 
     private void setModAlt(boolean val) {
         //Log.i("LatinIME", "setModAlt "+ mModAlt + "->" + val + ", chording=" + mAltKeyState.isChording());
-        mKeyboardSwitcher.setAltIndicator(val);
+        System.out.println("mModAlt="+val);
         mModAlt = val;
+        p_max_check_mkeys();
+        p_max_set_indicators();
     }
 
     private void setModMeta(boolean val) {
         //Log.i("LatinIME", "setModMeta "+ mModMeta + "->" + val + ", chording=" + mMetaKeyState.isChording());
-        mKeyboardSwitcher.setMetaIndicator(val);
+        System.out.println("mModMeta="+val);
         mModMeta = val;
+        p_max_check_mkeys();
+        p_max_set_indicators();
     }
 
     private void setModFn(boolean val) {
+        System.out.println("mModFn="+val);
         //Log.i("LatinIME", "setModFn " + mModFn + "->" + val + ", chording=" + mFnKeyState.isChording());
         mModFn = val;
+        p_max_check_mkeys();
         mKeyboardSwitcher.setFn(val);
-        mKeyboardSwitcher.setCtrlIndicator(mModCtrl);
-        mKeyboardSwitcher.setAltIndicator(mModAlt);
-        mKeyboardSwitcher.setMetaIndicator(mModMeta);
+        p_max_set_indicators();
     }
 
     private void startMultitouchShift() {
@@ -2903,15 +2927,25 @@ public class LatinIME extends InputMethodService implements
     public boolean preferCapitalization() {
         return mWord.isFirstCharCapitalized();
     }
-
-    void toggleLanguage(boolean reset, boolean next) {
-        if (reset) {
-            mLanguageSwitcher.reset();
-        } else {
-            if (next) {
-                mLanguageSwitcher.next();
+    //*// Patched by Pulya Max                                                   //*//
+    //*// reset=false,force_en=true toggles english when mod keys pressed        //*//
+    //*// reset=true,force_en=true toggles previous lang when mod keys releasing //*//
+    //*// Indicator sets when language changed
+    void toggleLanguage(boolean reset, boolean next,boolean force_en) {
+        if (force_en&&!reset)mLanguageSwitcher.p_max_force_en();
+        else if (force_en)mLanguageSwitcher.p_max_previous_lang();
+        else{
+                if (reset) {
+                mLanguageSwitcher.reset();
+                p_max_set_indicators();
             } else {
-                mLanguageSwitcher.prev();
+                if (next) {
+                    mLanguageSwitcher.next();
+                    p_max_set_indicators();
+                } else {
+                    mLanguageSwitcher.prev();
+                    p_max_set_indicators();
+                }
             }
         }
         int currentKeyboardMode = mKeyboardSwitcher.getKeyboardMode();
@@ -2949,7 +2983,7 @@ public class LatinIME extends InputMethodService implements
             mKeyboardModeOverridePortrait = 0;
         }
         if (sKeyboardSettings.hasFlag(GlobalKeyboardSettings.FLAG_PREF_RESET_KEYBOARDS)) {
-            toggleLanguage(true, true);
+            toggleLanguage(true, true,false);
         }
         int unhandledFlags = sKeyboardSettings.unhandledFlags();
         if (unhandledFlags != GlobalKeyboardSettings.FLAG_PREF_NONE) {
@@ -3066,16 +3100,16 @@ public class LatinIME extends InputMethodService implements
             }
             setCandidatesViewShown(isPredictionOn());
         } else if (action.equals("lang_prev")) {
-            toggleLanguage(false, false);
+            toggleLanguage(false, false,false);
         } else if (action.equals("lang_next")) {
-            toggleLanguage(false, true);
+            toggleLanguage(false, true,false);
         } else if (action.equals("full_mode")) {
             if (isPortrait()) {
                 mKeyboardModeOverridePortrait = (mKeyboardModeOverridePortrait + 1) % mNumKeyboardModes;
             } else {
                 mKeyboardModeOverrideLandscape = (mKeyboardModeOverrideLandscape + 1) % mNumKeyboardModes;
             }
-            toggleLanguage(true, true);
+            toggleLanguage(true, true,false);
         } else if (action.equals("extension")) {
             sKeyboardSettings.useExtension = !sKeyboardSettings.useExtension;
             reloadKeyboards();
@@ -3087,7 +3121,7 @@ public class LatinIME extends InputMethodService implements
                 mHeightLandscape += 5;
                 if (mHeightLandscape > 70) mHeightLandscape = 70;                
             }
-            toggleLanguage(true, true);
+            toggleLanguage(true, true,false);
         } else if (action.equals("height_down")) {
             if (isPortrait()) {
                 mHeightPortrait -= 5;
@@ -3096,7 +3130,7 @@ public class LatinIME extends InputMethodService implements
                 mHeightLandscape -= 5;
                 if (mHeightLandscape < 15) mHeightLandscape = 15;                
             }
-            toggleLanguage(true, true);
+            toggleLanguage(true, true,false);
         } else {
             Log.i(TAG, "Unsupported swipe action config: " + action);
         }

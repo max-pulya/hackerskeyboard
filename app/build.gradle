@@ -1,10 +1,11 @@
 apply plugin: 'com.android.application'
 
 android {
+    namespace 'org.pocketworkstation.pckeyboard'
     compileSdkVersion 26
     defaultConfig {
         applicationId 'org.pocketworkstation.pckeyboard'
-        minSdkVersion 14
+        minSdkVersion 21
         targetSdkVersion 26
         versionCode 1041001
         versionName "v1.41.1"
@@ -19,6 +20,10 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            debuggable true
+        }
+        debug {
+            debuggable true
         }
     }
     externalNativeBuild {

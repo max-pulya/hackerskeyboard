@@ -202,7 +202,7 @@ public class PluginManager extends BroadcastReceiver {
         Log.i(TAG, "Package information changed, updating dictionaries.");
         getPluginDictionaries(context);
         Log.i(TAG, "Finished updating dictionaries.");
-        mIME.toggleLanguage(true, true);
+        mIME.toggleLanguage(true, true,false);
     }
 
     static private class DictPluginSpecHK

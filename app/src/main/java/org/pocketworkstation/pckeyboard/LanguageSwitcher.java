@@ -36,10 +36,14 @@ public class LanguageSwitcher {
     private String[] mSelectedLanguageArray;
     private String   mSelectedLanguages;
     private int      mCurrentIndex = 0;
+    private int      mPreviousIndex = 0;
+    private int      mEnglishIndex = 0;
     private String   mDefaultInputLanguage;
     private Locale   mDefaultInputLocale;
     private Locale   mSystemLocale;
 
+    //*// added by Pulya Max //*//
+    private boolean mLangChangedByUser=false;
     public LanguageSwitcher(LatinIME ime) {
         mIme = ime;
         mLocales = new Locale[0];
@@ -87,6 +91,13 @@ public class LanguageSwitcher {
             }
             // If we didn't find the index, use the first one
         }
+
+        //*//Added by Pulya Max
+        for (int i=0;i<mSelectedLanguageArray.length;i++){
+            if (mSelectedLanguageArray[i].equals("en"))mEnglishIndex=i;
+        }
+        //*//
+
         return true;
     }
 
@@ -196,21 +207,33 @@ public class LanguageSwitcher {
     }
 
     public void reset() {
+        mLangChangedByUser=true;
         mCurrentIndex = 0;
         mSelectedLanguages = "";
         loadLocales(PreferenceManager.getDefaultSharedPreferences(mIme));
     }
 
     public void next() {
+        mLangChangedByUser=true;
         mCurrentIndex++;
         if (mCurrentIndex >= mLocales.length) mCurrentIndex = 0; // Wrap around
     }
 
     public void prev() {
+        mLangChangedByUser=true;
         mCurrentIndex--;
         if (mCurrentIndex < 0) mCurrentIndex = mLocales.length - 1; // Wrap around
     }
-
+    //*// Added by Pulya Max
+    public void p_max_force_en(){
+        mLangChangedByUser=false;
+        mPreviousIndex=mCurrentIndex;
+        mCurrentIndex=mEnglishIndex;
+    }
+    public void p_max_previous_lang(){
+        if(!mLangChangedByUser)mCurrentIndex=mPreviousIndex;
+    }
+    //*//
     public void persist() {
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(mIme);
         Editor editor = sp.edit();
