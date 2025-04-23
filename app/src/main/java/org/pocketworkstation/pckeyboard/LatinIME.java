@@ -2126,15 +2126,24 @@ public class LatinIME extends InputMethodService implements
         // User released a finger outside any key
         mKeyboardSwitcher.onCancelInput();
     }
-
+    //*//Edited by Pulya Max //*// Added ctrl+backspace hotkey
     private void handleBackspace() {
+        boolean ctrl_backspace_hotkey_enabled=true;
         boolean deleteChar = false;
         InputConnection ic = getCurrentInputConnection();
         if (ic == null)
             return;
 
+        if(mModCtrl&&ctrl_backspace_hotkey_enabled){
+            mPredicting = false;
+            ic.setComposingText("", 0);
+            mWord.reset();
+            mComposing=new StringBuilder("");
+            mJustRevertedSeparator = " ";
+            EditingUtil.deleteWordAndSeparatorAtCursor(ic," .,?!:;(){}[]<>'\"@-=+*/#\\&~$%^|`");
+        }
+        else {
         ic.beginBatchEdit();
-
         if (mPredicting) {
             final int length = mComposing.length();
             if (length > 0) {
@@ -2149,38 +2158,39 @@ public class LatinIME extends InputMethodService implements
                 ic.deleteSurroundingText(1, 0);
             }
         } else {
-            deleteChar = true;
-        }
-        postUpdateShiftKeyState();
-        TextEntryState.backspace();
-        if (TextEntryState.getState() == TextEntryState.State.UNDO_COMMIT) {
-            revertLastWord(deleteChar);
-            ic.endBatchEdit();
-            return;
-        } else if (mEnteredText != null
-                && sameAsTextBeforeCursor(ic, mEnteredText)) {
-            ic.deleteSurroundingText(mEnteredText.length(), 0);
-        } else if (deleteChar) {
-            if (mCandidateView != null
-                    && mCandidateView.dismissAddToDictionaryHint()) {
-                // Go back to the suggestion mode if the user canceled the
-                // "Touch again to save".
-                // NOTE: In gerenal, we don't revert the word when backspacing
-                // from a manual suggestion pick. We deliberately chose a
-                // different behavior only in the case of picking the first
-                // suggestion (typed word). It's intentional to have made this
-                // inconsistent with backspacing after selecting other
-                // suggestions.
+                deleteChar = true;
+            }
+            postUpdateShiftKeyState();
+            TextEntryState.backspace();
+            if (TextEntryState.getState() == TextEntryState.State.UNDO_COMMIT) {
                 revertLastWord(deleteChar);
-            } else {
-                sendDownUpKeyEvents(KeyEvent.KEYCODE_DEL);
-                if (mDeleteCount > DELETE_ACCELERATE_AT) {
+                ic.endBatchEdit();
+                return;
+            } else if (mEnteredText != null
+                    && sameAsTextBeforeCursor(ic, mEnteredText)) {
+                ic.deleteSurroundingText(mEnteredText.length(), 0);
+            } else if (deleteChar) {
+                if (mCandidateView != null
+                        && mCandidateView.dismissAddToDictionaryHint()) {
+                    // Go back to the suggestion mode if the user canceled the
+                    // "Touch again to save".
+                    // NOTE: In gerenal, we don't revert the word when backspacing
+                    // from a manual suggestion pick. We deliberately chose a
+                    // different behavior only in the case of picking the first
+                    // suggestion (typed word). It's intentional to have made this
+                    // inconsistent with backspacing after selecting other
+                    // suggestions.
+                    revertLastWord(deleteChar);
+                } else {
                     sendDownUpKeyEvents(KeyEvent.KEYCODE_DEL);
+                    if (mDeleteCount > DELETE_ACCELERATE_AT) {
+                        sendDownUpKeyEvents(KeyEvent.KEYCODE_DEL);
+                    }
                 }
             }
+            mJustRevertedSeparator = null;
+            ic.endBatchEdit();
         }
-        mJustRevertedSeparator = null;
-        ic.endBatchEdit();
     }
     //*// Patched by Pulya Max(added force english when modifier keys are pressed) //*//
     private void p_max_check_mkeys(){

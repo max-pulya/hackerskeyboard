@@ -83,18 +83,29 @@ public class EditingUtil {
      */
     public static String getWordAtCursor(
             InputConnection connection, String separators, Range range) {
-        Range r = getWordRangeAtCursor(connection, separators, range);
+        Range r = getWordOrSeparatorsRangeAtCursor(connection, separators, range,false);
         return (r == null) ? null : r.word;
+    }
+    //*//Added by Pulya Max. Used for ctrl+backspace hotkey
+    /**
+     * Removes the word surrounding the cursor and separators. Parameters are identical to
+     * getWordAtCursor.
+     */
+    public static void deleteWordAndSeparatorAtCursor(
+            InputConnection connection, String separators) {
+        deleteWordAtCursor(connection,separators,true);
+        deleteWordAtCursor(connection,separators,false);
     }
 
     /**
      * Removes the word surrounding the cursor. Parameters are identical to
      * getWordAtCursor.
      */
+    //*// edited by Maxim Pulya
     public static void deleteWordAtCursor(
-        InputConnection connection, String separators) {
+        InputConnection connection, String separators,boolean deleteSeparators) {
 
-        Range range = getWordRangeAtCursor(connection, separators, null);
+        Range range = getWordOrSeparatorsRangeAtCursor(connection, separators, null,deleteSeparators);
         if (range == null) return;
 
         connection.finishComposingText();
@@ -104,6 +115,7 @@ public class EditingUtil {
         connection.setSelection(newCursor, newCursor);
         connection.deleteSurroundingText(0, range.charsBefore + range.charsAfter);
     }
+
 
     /**
      * Represents a range of text, relative to the current cursor position.
@@ -133,8 +145,8 @@ public class EditingUtil {
         }
     }
 
-    private static Range getWordRangeAtCursor(
-            InputConnection connection, String sep, Range range) {
+    private static Range getWordOrSeparatorsRangeAtCursor(
+            InputConnection connection, String sep, Range range,boolean getSeparatorsRange) {
         if (connection == null || sep == null) {
             return null;
         }
@@ -146,7 +158,8 @@ public class EditingUtil {
 
         // Find first word separator before the cursor
         int start = before.length();
-        while (start > 0 && !isWhitespace(before.charAt(start - 1), sep)) start--;
+        if(!getSeparatorsRange) while (start > 0 && !isWhitespace(before.charAt(start - 1), sep)) start--;
+        else while (start > 0 && isWhitespace(before.charAt(start - 1), sep)) start--;
 
         // Find last word separator after the cursor
         int end = -1;
