@@ -2937,14 +2937,11 @@ public class LatinIME extends InputMethodService implements
         else{
                 if (reset) {
                 mLanguageSwitcher.reset();
-                p_max_set_indicators();
             } else {
                 if (next) {
                     mLanguageSwitcher.next();
-                    p_max_set_indicators();
                 } else {
                     mLanguageSwitcher.prev();
-                    p_max_set_indicators();
                 }
             }
         }
@@ -2959,6 +2956,7 @@ public class LatinIME extends InputMethodService implements
         mDeadKeysActive = mLanguageSwitcher.allowDeadKeys();
         updateShiftKeyState(getCurrentInputEditorInfo());
         setCandidatesViewShown(isPredictionOn());
+        p_max_set_indicators();
     }
 
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
