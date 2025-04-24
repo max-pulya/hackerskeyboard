@@ -1,4 +1,8 @@
 ## Patches from Pulya Max ##
+Removed signature check on main thread
+
+Added ctrl+backspace hotkey
+
 Fixed switch-case: constant expression required error. 
 
 Fixed build in Android Studio 2024. 

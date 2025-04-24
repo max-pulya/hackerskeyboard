@@ -2138,7 +2138,7 @@ public class LatinIME extends InputMethodService implements
             mPredicting = false;
             ic.setComposingText("", 0);
             mWord.reset();
-            mComposing=new StringBuilder("");
+            mComposing=new StringBuilder();
             mJustRevertedSeparator = " ";
             EditingUtil.deleteWordAndSeparatorAtCursor(ic," .,?!:;(){}[]<>'\"@-=+*/#\\&~$%^|`");
         }

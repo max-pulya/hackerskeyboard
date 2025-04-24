@@ -23,9 +23,10 @@ import android.app.Dialog;
 import android.app.backup.BackupManager;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
+/*
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.content.pm.Signature;
+import android.content.pm.Signature;*/
 import android.content.res.Resources;
 import android.os.Bundle;
 import android.preference.CheckBoxPreference;
@@ -113,7 +114,9 @@ public class LatinIMESettings extends PreferenceActivity
         
         updateSummaries();
 
-        String version = "";
+        String version = "custom";
+        //*//Signature check removed by Pulya Max
+        /*
         try {
             PackageInfo info = getPackageManager().getPackageInfo(getPackageName(), PackageManager.GET_SIGNATURES);
             version = info.versionName;
@@ -133,7 +136,7 @@ public class LatinIMESettings extends PreferenceActivity
             version += isOfficial ? " official" : " custom";
         } catch (PackageManager.NameNotFoundException e) {
             Log.e(TAG, "Could not find version info.");
-        }
+        }*/
 
         mLabelVersion.setSummary(version);
     }
@@ -263,6 +266,7 @@ public class LatinIMESettings extends PreferenceActivity
                 [mVoicePreference.findIndexOfValue(mVoicePreference.getValue())]);
     }
 
+    /*
     @Override
     protected Dialog onCreateDialog(int id) {
         switch (id) {
@@ -270,7 +274,7 @@ public class LatinIMESettings extends PreferenceActivity
                 Log.e(TAG, "unknown dialog " + id);
                 return null;
         }
-    }
+    }*/
 
     public void onDismiss(DialogInterface dialog) {
         if (!mOkClicked) {
@@ -280,6 +284,6 @@ public class LatinIMESettings extends PreferenceActivity
         }
     }
 
-    private void updateVoicePreference() {
-    }
+    /*private void updateVoicePreference() {
+    }*/
 }
