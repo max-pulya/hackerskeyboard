@@ -212,7 +212,7 @@ public class LatinIME extends InputMethodService implements
     private boolean mQuickFixes;
     private boolean mShowSuggestions;
     private boolean mIsShowingHint;
-    private boolean mConnectbotTabHack;
+    private boolean mTabHack;
     private boolean mFullscreenOverride;
     private boolean mForceKeyboardOn;
     private boolean mKeyboardNotification;
@@ -235,6 +235,9 @@ public class LatinIME extends InputMethodService implements
     private int mKeyboardModeOverridePortrait;
     private int mKeyboardModeOverrideLandscape;
     private int mCorrectionMode;
+
+    private int mCountTabPresses;
+
     private boolean mEnableVoice = true;
     private boolean mVoiceOnPrimary;
     private int mOrientation;
@@ -382,7 +385,7 @@ public class LatinIME extends InputMethodService implements
         Resources res = getResources();
         mReCorrectionEnabled = prefs.getBoolean(PREF_RECORRECTION_ENABLED,
                 res.getBoolean(R.bool.default_recorrection_enabled));
-        mConnectbotTabHack = prefs.getBoolean(PREF_CONNECTBOT_TAB_HACK,
+        mTabHack = prefs.getBoolean(PREF_CONNECTBOT_TAB_HACK,
                 res.getBoolean(R.bool.default_connectbot_tab_hack));
         mFullscreenOverride = prefs.getBoolean(PREF_FULLSCREEN_OVERRIDE,
                 res.getBoolean(R.bool.default_fullscreen_override));
@@ -1497,6 +1500,18 @@ public class LatinIME extends InputMethodService implements
             || pkg.equalsIgnoreCase("sk.vx.connectbot")
         ) && ei.inputType == 0); // FIXME
     }
+    //*//Added by Maxim Pulya
+    //*//In settings used to autofill by tab into "Private DNS" field
+    private boolean isSettings() {
+        EditorInfo ei = getCurrentInputEditorInfo();
+        String pkg = ei.packageName;
+        if (ei == null || pkg == null) return false;
+        System.out.println(ei.inputType);
+
+        return (pkg.equalsIgnoreCase("com.android.settings")
+        );
+    }
+
 
     private int getMetaState(boolean shifted) {
         int meta = 0;
@@ -1709,7 +1724,7 @@ public class LatinIME extends InputMethodService implements
         }
         InputConnection ic = getCurrentInputConnection();
         Integer ctrlseq = null;
-        if (mConnectbotTabHack) {
+        if (mTabHack) {
             ctrlseq = CTRL_SEQUENCES.get(code);
         }
         String seq = ESC_SEQUENCES.get(code);
@@ -1893,10 +1908,11 @@ public class LatinIME extends InputMethodService implements
     
     private void sendTab() {
         InputConnection ic = getCurrentInputConnection();
-        boolean tabHack = isConnectbot() && mConnectbotTabHack;
+        boolean tabHackConnectBot = isConnectbot() && mTabHack;
+        boolean tabHackSettings = isSettings() && mTabHack;
 
         // FIXME: tab and ^I don't work in connectbot, hackish workaround
-        if (tabHack) {
+        if (tabHackConnectBot) {
             if (mModAlt) {
                 // send ESC prefix
                 ic.commitText(Character.toString((char) 27), 1);
@@ -1909,6 +1925,17 @@ public class LatinIME extends InputMethodService implements
                     KeyEvent.KEYCODE_I));
             ic.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_UP,
                     KeyEvent.KEYCODE_I));
+        } else if (tabHackSettings) {
+            mCountTabPresses++;
+            if (mCountTabPresses==2)mCountTabPresses=0; // wrap around
+            switch (mCountTabPresses){
+                case 0:
+                    EditingUtil.SetText(ic,"dns.comss.one");
+                    break;
+                case 1:
+                    EditingUtil.SetText(ic,"dns.nullsproxy.com");
+                    break;
+            }
         } else {
             sendModifiedKeyDownUp(KeyEvent.KEYCODE_TAB);
         }
@@ -3012,7 +3039,7 @@ public class LatinIME extends InputMethodService implements
                         .show();
             }
         } else if (PREF_CONNECTBOT_TAB_HACK.equals(key)) {
-            mConnectbotTabHack = sharedPreferences.getBoolean(
+            mTabHack = sharedPreferences.getBoolean(
                     PREF_CONNECTBOT_TAB_HACK, res
                             .getBoolean(R.bool.default_connectbot_tab_hack));
         } else if (PREF_FULLSCREEN_OVERRIDE.equals(key)) {

@@ -63,6 +63,25 @@ public class EditingUtil {
 
         connection.setComposingText(newText, 1);
     }
+    //*//Added by Pulya Max
+    public static void SetText(InputConnection connection, String newText) {
+        if (connection == null) {
+            return;
+        }
+
+        // Commit the composing text
+        connection.finishComposingText();
+
+        // Deletes text if the field already has text.
+        CharSequence charBeforeCursor = connection.getTextBeforeCursor(1, 0);
+        if (charBeforeCursor != null
+                && !charBeforeCursor.equals(" ")
+                && (charBeforeCursor.length() > 0)) {
+            deleteWordAtCursor(connection,"",false);
+        }
+
+        connection.setComposingText(newText, 1);
+    }
 
     private static int getCursorPosition(InputConnection connection) {
         ExtractedText extracted = connection.getExtractedText(
