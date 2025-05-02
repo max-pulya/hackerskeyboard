@@ -823,7 +823,7 @@ public class LatinIME extends InputMethodService implements
         mSuggestionForceOff = false;
         mKeyboardModeOverridePortrait = 0;
         mKeyboardModeOverrideLandscape = 0;
-        sKeyboardSettings.useExtension = false;
+        sKeyboardSettings.useExtension = true;
 
         switch (attribute.inputType & EditorInfo.TYPE_MASK_CLASS) {
         case EditorInfo.TYPE_CLASS_NUMBER:
