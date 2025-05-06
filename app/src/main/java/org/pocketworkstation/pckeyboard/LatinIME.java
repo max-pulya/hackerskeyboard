@@ -155,6 +155,8 @@ public class LatinIME extends InputMethodService implements
     // private LatinKeyboardView mInputView;
     private LinearLayout mCandidateViewContainer;
     private CandidateView mCandidateView;
+
+    public LinearLayout mCandidateViewAndKeyboardView;
     private Suggest mSuggest;
     private CompletionInfo[] mCompletions;
 
@@ -700,7 +702,7 @@ public class LatinIME extends InputMethodService implements
         super.onConfigurationChanged(conf);
         mConfigurationChanging = false;
     }
-
+    //*//patched by pulya max for fix candidates
     @Override
     public View onCreateInputView() {
         setCandidatesViewShown(false);  // Workaround for "already has a parent" when reconfiguring
@@ -708,7 +710,24 @@ public class LatinIME extends InputMethodService implements
         mKeyboardSwitcher.makeKeyboards(true);
         mKeyboardSwitcher.setKeyboardMode(KeyboardSwitcher.MODE_TEXT, 0,
                 shouldShowVoiceButton(getCurrentInputEditorInfo()));
-        return mKeyboardSwitcher.getInputView();
+
+        View keyboard = mKeyboardSwitcher.getInputView();
+        View candidates = createCandidatesView();
+
+        mCandidateViewAndKeyboardView=new LinearLayout(this);
+        mCandidateViewAndKeyboardView.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams
+                (LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        layoutParams.setMargins(0, 0, 0, 0);
+
+        keyboard.setLayoutParams(layoutParams);
+        candidates.setLayoutParams(layoutParams);
+
+        mCandidateViewAndKeyboardView.addView(candidates);
+        mCandidateViewAndKeyboardView.addView(keyboard);
+
+
+        return mCandidateViewAndKeyboardView;
     }
 
     @Override
@@ -728,8 +747,8 @@ public class LatinIME extends InputMethodService implements
     	}
     }
     
-    @Override
-    public View onCreateCandidatesView() {
+    //*//Patched by Pulya Max to fix candidates on new android
+    public View createCandidatesView() {
         //Log.i(TAG, "onCreateCandidatesView(), mCandidateViewContainer=" + mCandidateViewContainer);
         //mKeyboardSwitcher.makeKeyboards(true);
         if (mCandidateViewContainer == null) {
@@ -739,7 +758,7 @@ public class LatinIME extends InputMethodService implements
             .findViewById(R.id.candidates);
             mCandidateView.setPadding(0, 0, 0, 0);
             mCandidateView.setService(this);
-            setCandidatesView(mCandidateViewContainer);
+            //setCandidatesView(mCandidateViewContainer);
         }
         return mCandidateViewContainer;
     }
@@ -858,14 +877,15 @@ public class LatinIME extends InputMethodService implements
                 mKeyboardSwitcher.setKeyboardMode(KeyboardSwitcher.MODE_EMAIL,
                         attribute.imeOptions, enableVoiceButton);
             } else if (variation == EditorInfo.TYPE_TEXT_VARIATION_URI) {
-                mPredictionOnForMode = false;
+                mPredictionOnForMode = true;
                 mKeyboardSwitcher.setKeyboardMode(KeyboardSwitcher.MODE_URL,
                         attribute.imeOptions, enableVoiceButton);
             } else if (variation == EditorInfo.TYPE_TEXT_VARIATION_SHORT_MESSAGE) {
                 mKeyboardSwitcher.setKeyboardMode(KeyboardSwitcher.MODE_IM,
                         attribute.imeOptions, enableVoiceButton);
             } else if (variation == EditorInfo.TYPE_TEXT_VARIATION_FILTER) {
-                mPredictionOnForMode = false;
+                mPredictionOnForMode = true; //*//Pulya max: I enabled prediction there because
+                //*// Youtube search bar uses this mode
             } else if (variation == EditorInfo.TYPE_TEXT_VARIATION_WEB_EDIT_TEXT) {
                 mKeyboardSwitcher.setKeyboardMode(KeyboardSwitcher.MODE_WEB,
                         attribute.imeOptions, enableVoiceButton);
@@ -878,8 +898,12 @@ public class LatinIME extends InputMethodService implements
             }
 
             // If NO_SUGGESTIONS is set, don't do prediction.
+
+            //*//Maxim Pulya: If NO_SUGGESTIONS is set, do prediction because Google Chrome
+            //*//authors set this flag to false in search bar
+            //*//Gboard also ignores this flag
             if ((attribute.inputType & EditorInfo.TYPE_TEXT_FLAG_NO_SUGGESTIONS) != 0) {
-                mPredictionOnForMode = false;
+                //mPredictionOnForMode = false;
                 mInputTypeNoAutoCorrect = true;
             }
             // If it's not multiline and the autoCorrect flag is not set, then
@@ -1120,6 +1144,7 @@ public class LatinIME extends InputMethodService implements
         }
     }
 
+    //*// Edited by Maxim Pulya to fix candidates view
     private void setCandidatesViewShownInternal(boolean shown,
             boolean needsInputViewShown) {
 //        Log.i(TAG, "setCandidatesViewShownInternal(" + shown + ", " + needsInputViewShown +
@@ -1138,16 +1163,17 @@ public class LatinIME extends InputMethodService implements
                         : true);
         if (visible) {
             if (mCandidateViewContainer == null) {
-                onCreateCandidatesView();
+                mCandidateViewAndKeyboardView.addView(createCandidatesView(),0);
                 setNextSuggestions();
             }
         } else {
             if (mCandidateViewContainer != null) {
+                mCandidateViewAndKeyboardView.removeView(mCandidateViewContainer);
                 removeCandidateViewContainer();
                 commitTyped(getCurrentInputConnection(), true);
             }
         }
-        super.setCandidatesViewShown(visible);
+        //super.setCandidatesViewShown(visible);
     }
 
     @Override

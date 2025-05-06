@@ -644,7 +644,8 @@ public class KeyboardSwitcher implements
         mInputMethodService.mHandler.post(new Runnable() {
             public void run() {
                 if (mInputView != null) {
-                    mInputMethodService.setInputView(mInputView);
+                    //*//Edited by Pulya Max to fix candidates
+                    mInputMethodService.setInputView(mInputMethodService.mCandidateViewAndKeyboardView);
                 }
                 mInputMethodService.updateInputViewShown();
             }
