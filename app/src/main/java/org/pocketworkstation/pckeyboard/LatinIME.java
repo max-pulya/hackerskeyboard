@@ -897,7 +897,7 @@ public class LatinIME extends InputMethodService implements
                 }
             }
 
-            // If NO_SUGGESTIONS is set, don't do prediction.
+            //OLD: If NO_SUGGESTIONS is set, don't do prediction.
 
             //*//Maxim Pulya: If NO_SUGGESTIONS is set, do prediction because Google Chrome
             //*//authors set this flag to false in search bar
@@ -2015,10 +2015,9 @@ public class LatinIME extends InputMethodService implements
                 handleShift();
             break;
         case Keyboard.KEYCODE_MODE_CHANGE:
-            // Symbol key is handled in onPress() when device has distinct
+            //OLD: Symbol key is handled in onPress() when device has distinct
             // multi-touch panel.
-            if (!distinctMultiTouch)
-                changeKeyboardMode();
+            changeKeyboardMode(); //*//Pulya max: Fix of changing keyboard mode if extension is enabled
             break;
         case LatinKeyboardView.KEYCODE_CTRL_LEFT:
             // Ctrl key is handled in onPress() when device has distinct
@@ -3227,7 +3226,7 @@ public class LatinIME extends InputMethodService implements
             startMultitouchShift();
         } else if (distinctMultiTouch
                 && primaryCode == Keyboard.KEYCODE_MODE_CHANGE) {
-            changeKeyboardMode();
+            //*//changeKeyboardMode();    Pulya max: Fix of changing keyboard mode if extension is enabled
             mSymbolKeyState.onPress();
             mKeyboardSwitcher.setAutoModeSwitchStateMomentary();
         } else if (distinctMultiTouch
@@ -3279,8 +3278,9 @@ public class LatinIME extends InputMethodService implements
             // Snap back to the previous keyboard mode if the user chords the
             // mode change key and
             // other key, then released the mode change key.
-            if (mKeyboardSwitcher.isInChordingAutoModeSwitchState())
-                changeKeyboardMode();
+
+            //if (mKeyboardSwitcher.isInChordingAutoModeSwitchState())
+                //*//changeKeyboardMode();    Pulya max: Fix of changing keyboard mode if extension is enabled
             mSymbolKeyState.onRelease();
         } else if (distinctMultiTouch
                 && primaryCode == LatinKeyboardView.KEYCODE_CTRL_LEFT) {
