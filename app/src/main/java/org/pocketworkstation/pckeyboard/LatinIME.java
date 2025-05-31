@@ -872,7 +872,9 @@ public class LatinIME extends InputMethodService implements
             } else {
                 mAutoSpace = true;
             }
-            if (variation == EditorInfo.TYPE_TEXT_VARIATION_EMAIL_ADDRESS) {
+            //*//edited by Maxim Pulya
+            if (variation == EditorInfo.TYPE_TEXT_VARIATION_EMAIL_ADDRESS ||
+                    variation == EditorInfo.TYPE_TEXT_VARIATION_WEB_EMAIL_ADDRESS )  {
                 mPredictionOnForMode = false;
                 mKeyboardSwitcher.setKeyboardMode(KeyboardSwitcher.MODE_EMAIL,
                         attribute.imeOptions, enableVoiceButton);
