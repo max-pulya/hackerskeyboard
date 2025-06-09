@@ -550,7 +550,7 @@ public class LatinIME extends InputMethodService implements
         }
     }
     
-    private boolean isPortrait() {
+    public boolean isPortrait() {
         return (mOrientation == Configuration.ORIENTATION_PORTRAIT);
     }
 

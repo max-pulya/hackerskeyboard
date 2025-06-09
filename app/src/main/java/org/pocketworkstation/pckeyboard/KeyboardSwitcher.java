@@ -311,14 +311,11 @@ public class KeyboardSwitcher implements
         LatinKeyboard keyboard = null;
         //*// Added by Maxim Pulya
         //*// I made pin keyboard bigger
-        if (mode == MODE_PHONE) {
-            id.mKeyboardHeightPercent*=1.4;
-        }
+        if (mode == MODE_PHONE && mInputMethodService.isPortrait())id.mKeyboardHeightPercent*=1.4;
+
         keyboard = getKeyboard(id);
 
-        if (mode == MODE_PHONE) {
-            mInputView.setPhoneKeyboard(keyboard);
-        }
+        if (mode == MODE_PHONE)mInputView.setPhoneKeyboard(keyboard);
 
         mCurrentId = id;
         mInputView.setKeyboard(keyboard);
