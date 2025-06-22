@@ -159,6 +159,7 @@ public class LatinIME extends InputMethodService implements
     public LinearLayout mCandidateViewAndKeyboardView;
     private Suggest mSuggest;
     private CompletionInfo[] mCompletions;
+    private CompletionInfo[] mCompletionsFullText;
 
     private AlertDialog mOptionsDialog;
 
@@ -791,7 +792,7 @@ public class LatinIME extends InputMethodService implements
         sKeyboardSettings.editorFieldId = attribute.fieldId;
         sKeyboardSettings.editorInputType = attribute.inputType;
 
-        //Log.i("PCKeyboard", "onStartInputView " + attribute + ", inputType= " + Integer.toHexString(attribute.inputType) + ", restarting=" + restarting);
+        Log.i("PCKeyboard", "onStartInputView " + attribute + ", inputType= " + Integer.toHexString(attribute.inputType) + ", restarting=" + restarting);
         LatinKeyboardView inputView = mKeyboardSwitcher.getInputView();
         // In landscape mode, this method gets called without the input view
         // being created.
@@ -833,6 +834,7 @@ public class LatinIME extends InputMethodService implements
         mPredictionOnForMode = false;
         mCompletionOn = false;
         mCompletions = null;
+        mCompletionsFullText = null;
         mModCtrl = false;
         mModAlt = false;
         mModMeta = false;
@@ -914,6 +916,7 @@ public class LatinIME extends InputMethodService implements
                     && (attribute.inputType & EditorInfo.TYPE_TEXT_FLAG_MULTI_LINE) == 0) {
                 mInputTypeNoAutoCorrect = true;
             }
+            //*//Max Pulya: What?
             if ((attribute.inputType & EditorInfo.TYPE_TEXT_FLAG_AUTO_COMPLETE) != 0) {
                 mPredictionOnForMode = false;
                 mCompletionOn = isFullscreenMode();
@@ -1123,6 +1126,7 @@ public class LatinIME extends InputMethodService implements
         TextEntryState.endSession();
     }
 
+    //*//Code below not used
     @Override
     public void onDisplayCompletions(CompletionInfo[] completions) {
         if (mCompletionOn) {
@@ -1517,26 +1521,26 @@ public class LatinIME extends InputMethodService implements
     private boolean isShowingOptionDialog() {
         return mOptionsDialog != null && mOptionsDialog.isShowing();
     }
-
-    private boolean isConnectbot() {
+    private String getEditorPackageName(){ //*//Refactored by Maxim Pulya
         EditorInfo ei = getCurrentInputEditorInfo();
-        String pkg = ei.packageName;
-        if (ei == null || pkg == null) return false;
+        String pkg = null;
+        if (ei!=null) pkg=ei.packageName;
+        if (pkg==null)pkg="";
+        return pkg;
+    }
+    private boolean isConnectbot() {
+        String pkg = getEditorPackageName();
         return ((pkg.equalsIgnoreCase("org.connectbot")
             || pkg.equalsIgnoreCase("org.woltage.irssiconnectbot")
             || pkg.equalsIgnoreCase("com.pslib.connectbot")
             || pkg.equalsIgnoreCase("sk.vx.connectbot")
-        ) && ei.inputType == 0); // FIXME
+        ) && getCurrentInputEditorInfo().inputType == 0); // FIXME
     }
     //*//Added by Maxim Pulya
     //*//In settings used to autofill by tab into "Private DNS" field
     private boolean isSettings() {
-        EditorInfo ei = getCurrentInputEditorInfo();
-        String pkg = ei.packageName;
-        if (ei == null || pkg == null) return false;
-        System.out.println(ei.inputType);
-
-        return (pkg.equalsIgnoreCase("com.android.settings")
+        String pkg = getEditorPackageName();
+        return pkg.equalsIgnoreCase("com.android.settings"
         );
     }
 
@@ -2585,6 +2589,21 @@ public class LatinIME extends InputMethodService implements
                     typedWordValid, haveMinimalSuggestion);
         }
     }
+    private void setSuggestions(List<CharSequence> suggestions,
+                                List<CharSequence> suggestions_fullText,
+                                boolean completions, boolean typedWordValid,
+                                boolean haveMinimalSuggestion) {
+
+        if (mIsShowingHint) {
+            setCandidatesViewShown(true);
+            mIsShowingHint = false;
+        }
+
+        if (mCandidateView != null) {
+            mCandidateView.setSuggestions(suggestions, suggestions_fullText, completions,
+                    typedWordValid, haveMinimalSuggestion);
+        }
+    }
 
     private void updateSuggestions() {
         LatinKeyboardView inputView = mKeyboardSwitcher.getInputView();
@@ -2685,8 +2704,13 @@ public class LatinIME extends InputMethodService implements
         return false;
     }
 
-    public void pickSuggestionManually(int index, CharSequence suggestion) {
+
+    public void pickSuggestionManually(int index) {
         List<CharSequence> suggestions = mCandidateView.getSuggestions();
+        List<CharSequence> suggestions_FullText = mCandidateView.getSuggestions_fullText();
+        CharSequence suggestion;
+        if (suggestions_FullText!=null) suggestion = suggestions_FullText.get(index);
+        else suggestion = suggestions.get(index);
 
         final boolean correcting = TextEntryState.isCorrecting();
         InputConnection ic = getCurrentInputConnection();
@@ -2695,7 +2719,11 @@ public class LatinIME extends InputMethodService implements
         }
         if (mCompletionOn && mCompletions != null && index >= 0
                 && index < mCompletions.length) {
-            CompletionInfo ci = mCompletions[index];
+
+            CompletionInfo ci;
+            if(mCompletionsFullText!=null) ci = mCompletionsFullText[index];
+            else  ci = mCompletions[index];
+
             if (ic != null) {
                 ic.commitCompletion(ci);
             }
@@ -2713,7 +2741,7 @@ public class LatinIME extends InputMethodService implements
         // If this is a punctuation, apply it through the normal key press
         if (suggestion.length() == 1
                 && (isWordSeparator(suggestion.charAt(0)) || isSuggestedPunctuation(suggestion
-                        .charAt(0)))) {
+                .charAt(0)))) {
             final char primaryCode = suggestion.charAt(0);
             onKey(primaryCode, new int[] { primaryCode },
                     LatinKeyboardBaseView.NOT_A_TOUCH_COORDINATE,
@@ -2765,6 +2793,7 @@ public class LatinIME extends InputMethodService implements
         }
     }
 
+
     private void rememberReplacedWord(CharSequence suggestion) {
     }
 
@@ -2798,6 +2827,9 @@ public class LatinIME extends InputMethodService implements
             setNextSuggestions();
         }
         updateShiftKeyState(getCurrentInputEditorInfo());
+        if(suggestion.equals("/del")){
+            EditingUtil.SetText(ic,"");
+        }
     }
 
     /**
@@ -2873,9 +2905,99 @@ public class LatinIME extends InputMethodService implements
         }
     }
 
+    //*//Edited by Maxim Pulya
     private void setNextSuggestions() {
-        setSuggestions(mSuggestPuncList, false, false, false);
+        List<CharSequence> suggestions = null;
+        List<CharSequence> suggestions_fullText = null;
+        switch (getEditorPackageName()) {
+            case "com.android.settings":
+                suggestions = new ArrayList<CharSequence>();
+                suggestions_fullText = new ArrayList<CharSequence>();
+                if(EditingUtil.textViewIsEmpty(getCurrentInputConnection())) {
+                    suggestions_fullText.add("dns.nullsproxy.com");
+                    suggestions.add("Null`s Proxy");
+
+                    suggestions_fullText.add("dns.comss.one");
+                    suggestions.add("Comss DNS");
+
+                    suggestions_fullText.add("dot.sb");
+                    suggestions.add("dot.sb");
+
+                    suggestions_fullText.add("/del");
+                    suggestions.add("/del");
+
+                }
+                break;
+            case "ai.x.grok":
+            case "com.deepseek.chat": //*// AI
+            case "com.google.android.googlequicksearchbox"://*//Gemini AI is part of google app
+            case "com.openai.chatgpt":
+                suggestions = new ArrayList<CharSequence>();
+                suggestions_fullText = new ArrayList<CharSequence>();
+                if(EditingUtil.textViewIsEmpty(getCurrentInputConnection())) {
+                    suggestions.add("/перевод");
+                    suggestions_fullText.add("System_Role: \"Translator. You must translate text from field 'Text' to language from field 'Language_code'. In output should be only translated text for copying.\"\n" +
+                            "Language_code: \"\"\n" +
+                            "Text: \"\"\n");}
+
+                break;
+            case "com.mojang.minecraftpe":
+            case "net.kdt.pojavlaunch":
+                suggestions=new ArrayList<CharSequence>();
+                if(EditingUtil.textViewIsEmpty(getCurrentInputConnection())) {
+                    suggestions.add("/tp");
+                    suggestions.add("/gamemode");
+                    suggestions.add("/give");
+                    suggestions.add("/time set");
+                    suggestions.add("/summon");
+                    suggestions.add("/weather");
+                    suggestions.add("/kill");
+                    suggestions.add("/setworldspawn");
+                }
+                break;
+            case "com.android.browser":
+            case "com.android.chrome":
+            case "com.brave.browser":
+            case "com.duckduckgo.app.browser":
+            case "com.lineageos.jelly":
+            case "com.microsoft.emmx":
+            case "com.microsoft.emmx.dev":
+            case "com.opera.browser":
+            case "com.sec.android.app.sbrowser":
+            case "com.sec.android.app.sbrowser.beta":
+            case "org.mozilla.firefox":
+            case "org.torproject.torbrowser":
+            case "org.torproject.torbrowser_alpha":
+                suggestions=new ArrayList<CharSequence>();
+                suggestions.add("https://");
+                if(!EditingUtil.textViewIsEmpty(getCurrentInputConnection())) {
+                    suggestions.add("com");
+                    suggestions.add("org");
+                    suggestions.add("net");
+                    suggestions.add("io");
+                    suggestions.add("xyz");
+                    suggestions.add("рф");
+                    suggestions.add("ru");
+                    suggestions.add("tk");
+                    suggestions.add("cn");
+                    suggestions.add("de");
+                    suggestions.add("info");
+                    suggestions.add("top");
+                }
+                suggestions.add("https://www.");
+
+
+
+                break;
+            default:
+
+                suggestions = mSuggestPuncList;
+        }
+        if (suggestions_fullText!=null) setSuggestions(suggestions, suggestions_fullText,
+                false, false, false);
+        else setSuggestions(suggestions, false, false, false);
     }
+
 
     private void addToDictionaries(CharSequence suggestion, int frequencyDelta) {
         checkAddToDictionary(suggestion, frequencyDelta, false);

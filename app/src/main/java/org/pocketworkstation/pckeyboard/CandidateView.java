@@ -46,6 +46,10 @@ public class CandidateView extends View {
 
     private LatinIME mService;
     private final ArrayList<CharSequence> mSuggestions = new ArrayList<CharSequence>();
+
+
+
+    private ArrayList<CharSequence> mSuggestions_fullText = null;
     private boolean mShowingCompletions;
     private CharSequence mSelectedString;
     private int mSelectedIndex;
@@ -62,11 +66,15 @@ public class CandidateView extends View {
     private int mCurrentWordIndex;
     private Drawable mDivider;
     
-    private static final int MAX_SUGGESTIONS = 32;
+    private static final int MAX_SUGGESTIONS = 10;
+    /**
+    *Length of R.array.suggested_commands
+    */
+    private static final int COMMANDS_COUNT = 1;
     private static final int SCROLL_PIXELS = 20;
     
-    private final int[] mWordWidth = new int[MAX_SUGGESTIONS];
-    private final int[] mWordX = new int[MAX_SUGGESTIONS];
+    private final int[] mWordWidth = new int[MAX_SUGGESTIONS+COMMANDS_COUNT];
+    private final int[] mWordX = new int[MAX_SUGGESTIONS+COMMANDS_COUNT];
     private int mPopupPreviewX;
     private int mPopupPreviewY;
 
@@ -320,6 +328,7 @@ public class CandidateView extends View {
     
     public void setSuggestions(List<CharSequence> suggestions, boolean completions,
             boolean typedWordValid, boolean haveMinimalSuggestion) {
+        mSuggestions_fullText=null;
         clear();
         if (suggestions != null) {
             int insertCount = Math.min(suggestions.size(), MAX_SUGGESTIONS);
@@ -329,6 +338,30 @@ public class CandidateView extends View {
                     break;
             }
         }
+        mSuggestions.addAll(Arrays.asList(getResources().getStringArray(R.array.suggested_commands)));
+        mShowingCompletions = completions;
+        mTypedWordValid = typedWordValid;
+        scrollTo(0, getScrollY());
+        mTargetScrollX = 0;
+        mHaveMinimalSuggestion = haveMinimalSuggestion;
+        // Compute the total width
+        onDraw(null);
+        invalidate();
+        requestLayout();
+    }
+    public void setSuggestions(List<CharSequence> suggestions,List<CharSequence> suggestions_FullText, boolean completions,
+                               boolean typedWordValid, boolean haveMinimalSuggestion) {
+        mSuggestions_fullText=new ArrayList<>();
+        clear();
+        if (suggestions != null) {
+            int insertCount = Math.min(suggestions.size(), MAX_SUGGESTIONS);
+            for (int i=0;i<insertCount;i++) {
+                mSuggestions.add(suggestions.get(i));
+                mSuggestions_fullText.add(suggestions_FullText.get(i));
+            }
+        }
+        mSuggestions.addAll(Arrays.asList(getResources().getStringArray(R.array.suggested_commands)));
+        mSuggestions_fullText.addAll(Arrays.asList(getResources().getStringArray(R.array.suggested_commands)));
         mShowingCompletions = completions;
         mTypedWordValid = typedWordValid;
         scrollTo(0, getScrollY());
@@ -361,6 +394,7 @@ public class CandidateView extends View {
     /* package */ List<CharSequence> getSuggestions() {
         return mSuggestions;
     }
+    /* package */ ArrayList<CharSequence> getSuggestions_fullText() {return mSuggestions_fullText;}
 
     public void clear() {
         // Don't call mSuggestions.clear() because it's being used for logging
@@ -403,7 +437,7 @@ public class CandidateView extends View {
                         //TextEntryState.acceptedSuggestion(mSuggestions.get(0), mSelectedString);
                         //TextEntryState.manualTyped(mSelectedString);
                     }
-                    mService.pickSuggestionManually(mSelectedIndex, mSelectedString);
+                    mService.pickSuggestionManually(mSelectedIndex);
                     mSelectedString = null;
                     mSelectedIndex = -1;
                 }
@@ -420,7 +454,7 @@ public class CandidateView extends View {
                             //TextEntryState.acceptedSuggestion(mSuggestions.get(0), mSelectedString);
                             //TextEntryState.manualTyped(mSelectedString);
                         }
-                        mService.pickSuggestionManually(mSelectedIndex, mSelectedString);
+                        mService.pickSuggestionManually(mSelectedIndex);
                     }
                 }
             }

@@ -92,6 +92,16 @@ public class EditingUtil {
         return extracted.startOffset + extracted.selectionStart;
     }
 
+    public static boolean textViewIsEmpty(InputConnection connection) {
+        if (connection==null) return true;
+        CharSequence before = connection.getTextBeforeCursor(1, 0);
+        CharSequence after = connection.getTextAfterCursor(1, 0);
+        String text = "";
+        if(before!=null) text += before;
+        if(after!=null)  text += after;
+        return text.isEmpty();
+
+    }
     /**
      * @param connection connection to the current text field.
      * @param separators characters which may separate words

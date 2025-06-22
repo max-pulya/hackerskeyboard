@@ -17,7 +17,13 @@
 ** limitations under the License.
 */
 -->
+
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+<!--    Length of this string-array should match CandidateView.COMMANDS_COUNT constant-->
+    <string-array name="suggested_commands">
+        <item>/del</item>
+    </string-array>
+
     <!-- Title for Latin keyboard  -->
     <string name="english_ime_name">Hacker\'s Keyboard</string>
     <!-- Title for Latin keyboard settings activity / dialog -->
