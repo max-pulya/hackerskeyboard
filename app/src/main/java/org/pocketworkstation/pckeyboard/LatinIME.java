@@ -502,6 +502,7 @@ public class LatinIME extends InputMethodService implements
         }
         if (Settings.canDrawOverlays(this)) return true;
         Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(intent);
         return false;
     }
