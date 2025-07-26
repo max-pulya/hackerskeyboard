@@ -23,11 +23,11 @@ public class NotificationReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         String action = intent.getAction();
         Log.i(TAG, "NotificationReceiver.onReceive called, action=" + action);
-
         if (action.equals(ACTION_SHOW)) {
             InputMethodManager imm = (InputMethodManager)
                 context.getSystemService(Context.INPUT_METHOD_SERVICE);
             if (imm != null) {
+                mIME.keyboardClosingLock =true;
                 imm.showSoftInputFromInputMethod(mIME.mToken, InputMethodManager.SHOW_FORCED);
             }
         } else if (action.equals(ACTION_SETTINGS)) {

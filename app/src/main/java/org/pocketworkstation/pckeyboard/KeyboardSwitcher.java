@@ -649,7 +649,7 @@ public class KeyboardSwitcher implements
             public void run() {
                 if (mInputView != null) {
                     //*//Edited by Pulya Max to fix candidates
-                    mInputMethodService.setInputView(mInputMethodService.mCandidateViewAndKeyboardView);
+                    //mInputMethodService.setInputView(mInputMethodService.mCandidateViewAndKeyboardView);
                 }
                 mInputMethodService.updateInputViewShown();
             }

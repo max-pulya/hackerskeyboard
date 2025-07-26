@@ -35,6 +35,8 @@ import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.content.res.XmlResourceParser;
+import android.graphics.PixelFormat;
+import android.hardware.display.DisplayManager;
 import android.inputmethodservice.InputMethodService;
 import android.media.AudioManager;
 import android.os.Build;
@@ -45,6 +47,8 @@ import android.os.SystemClock;
 import android.os.Vibrator;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
+import android.provider.Settings;
+import android.support.annotation.RequiresApi;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
 import android.text.TextUtils;
@@ -52,6 +56,8 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.PrintWriterPrinter;
 import android.util.Printer;
+import android.view.Display;
+import android.view.Gravity;
 import android.view.HapticFeedbackConstants;
 import android.view.KeyEvent;
 import android.view.View;
@@ -294,6 +300,12 @@ public class LatinIME extends InputMethodService implements
     
     private PluginManager mPluginManager;
     private NotificationReceiver mNotificationReceiver;
+    public boolean keyboardClosingLock =false;
+
+    private WindowManager mWindowManager;
+    private WindowManager.LayoutParams mParams;
+    private boolean floatingKeyboardShown=false;
+
 
     private VoiceRecognitionTrigger mVoiceRecognitionTrigger;
 
@@ -484,12 +496,20 @@ public class LatinIME extends InputMethodService implements
             notificationManager.createNotificationChannel(channel);
         }
     }
-
+    private boolean requestOverlays(){
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            return true;
+        }
+        if (Settings.canDrawOverlays(this)) return true;
+        Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION);
+        startActivity(intent);
+        return false;
+    }
     private void setNotification(boolean visible) {
         String ns = Context.NOTIFICATION_SERVICE;
         NotificationManager mNotificationManager = (NotificationManager) getSystemService(ns);
 
-        if (visible && mNotificationReceiver == null) {
+        if (visible && mNotificationReceiver == null && requestOverlays()) {
             createNotificationChannel();
             int icon = R.drawable.icon;
             CharSequence text = "Keyboard notification enabled.";
@@ -730,6 +750,47 @@ public class LatinIME extends InputMethodService implements
 
         return mCandidateViewAndKeyboardView;
     }
+    /**
+     *  AI_GENERATED
+     * RESPONSE_ID: 0
+     * MODEL: gemini-2.5-pro
+     * PROMPT_LANGUAGE: RU
+     * PROMPT:Caused by: java.lang.IllegalArgumentException: Window type mismatch. Window Context's window type is 2011, while LayoutParams' type is set to 2038. Please create another Window Context via createWindowContext(getDisplay(), 2038, null) to add window with type:2038 как исправить
+    */
+    @RequiresApi(api = Build.VERSION_CODES.O)//THIS CODE IS BAD, MIX OF AI AND STACKOVERFLOW
+    private void createFloatingKeyboard() {
+        // Получаем DisplayManager и основной дисплей
+        DisplayManager displayManager = (DisplayManager) getSystemService(Context.DISPLAY_SERVICE);
+        Display primaryDisplay = displayManager.getDisplay(Display.DEFAULT_DISPLAY);
+
+        // Создаем контекст для отображения на указанном дисплее
+        Context displayContext = createDisplayContext(primaryDisplay);
+
+        // Создаем WindowContext с нужным типом окна (TYPE_APPLICATION_OVERLAY)
+        Context windowContext = null;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            windowContext = displayContext.createWindowContext(WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY, null);
+            mWindowManager = (WindowManager) windowContext.getSystemService(Context.WINDOW_SERVICE);
+        }
+
+        // fetch window manager object
+
+        // set layout parameter of window manager
+        mParams = new WindowManager.LayoutParams(
+                WindowManager.LayoutParams.MATCH_PARENT, // width is equal to full screen
+                WindowManager.LayoutParams.WRAP_CONTENT, // height is equal to full screen
+                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY, //
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE, // this window won't ever get key input focus
+                PixelFormat.TRANSLUCENT
+        );
+
+
+        mParams.gravity = Gravity.BOTTOM;
+        if(!floatingKeyboardShown) {
+            mWindowManager.addView(mCandidateViewAndKeyboardView, mParams);
+            floatingKeyboardShown=true;
+        }
+    }
 
     @Override
     public AbstractInputMethodImpl onCreateInputMethodInterface() {
@@ -787,6 +848,11 @@ public class LatinIME extends InputMethodService implements
     
     @Override
     public void onStartInputView(EditorInfo attribute, boolean restarting) {
+        if (keyboardClosingLock && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+            setInputView(new View(this));
+            createFloatingKeyboard();
+
+        }
         sKeyboardSettings.editorPackageName = attribute.packageName;
         sKeyboardSettings.editorFieldName = attribute.fieldName;
         sKeyboardSettings.editorFieldId = attribute.fieldId;
@@ -983,17 +1049,23 @@ public class LatinIME extends InputMethodService implements
 
     @Override
     public void onFinishInput() {
+        if(keyboardClosingLock)return;
+        Log.d(TAG, "onFinishInput: "+ keyboardClosingLock);
+
         super.onFinishInput();
 
         onAutoCompletionStateChanged(false);
 
-        if (mKeyboardSwitcher.getInputView() != null) {
+        if (mKeyboardSwitcher.getInputView() != null)
             mKeyboardSwitcher.getInputView().closing();
-        }
         if (mAutoDictionary != null)
             mAutoDictionary.flushPendingWrites();
         if (mUserBigramDictionary != null)
             mUserBigramDictionary.flushPendingWrites();
+
+
+        keyboardClosingLock =false;
+
     }
 
     @Override
@@ -1499,11 +1571,22 @@ public class LatinIME extends InputMethodService implements
     }
 
     private void onOptionKeyPressed() {
+        if (keyboardClosingLock ||floatingKeyboardShown){
+            if(!keyboardClosingLock)floatingKeyboardShown=false;//FIXME GOVNOKOD THIS CODE IS PIECE OF SHIT
+            keyboardClosingLock =false;
+
+            if(floatingKeyboardShown)onFinishInput();//onFinishInput calls onKey
+            mWindowManager.removeView(mCandidateViewAndKeyboardView);
+            setInputView(mCandidateViewAndKeyboardView);
+            return;
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             // Input method selector is available as a button in the soft key area, so just launch
             // HK settings directly. This also works around the alert dialog being clipped
             // in Android O.
-            startActivity(new Intent(this, LatinIMESettings.class));
+            Intent intent = new Intent(this, LatinIMESettings.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
         } else {
             // Show an options menu with choices to change input method or open HK settings.
             if (!isShowingOptionDialog()) {
