@@ -22,6 +22,7 @@ import com.google.android.voiceime.VoiceRecognitionTrigger;
 
 import org.xmlpull.v1.XmlPullParserException;
 
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -56,10 +57,12 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.PrintWriterPrinter;
 import android.util.Printer;
+import android.util.TypedValue;
 import android.view.Display;
 import android.view.Gravity;
 import android.view.HapticFeedbackConstants;
 import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
@@ -71,6 +74,8 @@ import android.view.inputmethod.ExtractedText;
 import android.view.inputmethod.ExtractedTextRequest;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
@@ -300,13 +305,21 @@ public class LatinIME extends InputMethodService implements
     
     private PluginManager mPluginManager;
     private NotificationReceiver mNotificationReceiver;
-    public boolean keyboardClosingLock =false;
+    public boolean mKeyboardClosingLock =false;
 
     private WindowManager mWindowManager;
     private WindowManager.LayoutParams mParams;
-    private boolean floatingKeyboardShown=false;
+    private View mFloatingKeyboard;
+    private boolean mFloatingKeyboardShown=false;
+    private boolean mNormalKeyboardShown=false;
 
+    private enum KeyboardType{
+        keyboard,
+        gamepad_zxc_under_v1_0,
+        gamepad_abcxyz_sega,
 
+    }
+    private KeyboardType mKeyboardType=KeyboardType.keyboard;
     private VoiceRecognitionTrigger mVoiceRecognitionTrigger;
 
     public abstract static class WordAlternatives {
@@ -520,6 +533,7 @@ public class LatinIME extends InputMethodService implements
             mNotificationReceiver = new NotificationReceiver(this);
             final IntentFilter pFilter = new IntentFilter(NotificationReceiver.ACTION_SHOW);
             pFilter.addAction(NotificationReceiver.ACTION_SETTINGS);
+            pFilter.addAction(NotificationReceiver.ACTION_GAMEPAD);
             registerReceiver(mNotificationReceiver, pFilter);
             
             Intent notificationIntent = new Intent(NotificationReceiver.ACTION_SHOW);
@@ -527,8 +541,11 @@ public class LatinIME extends InputMethodService implements
             //PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
 
             Intent configIntent = new Intent(NotificationReceiver.ACTION_SETTINGS);
+            Intent gamepadIntent = new Intent(NotificationReceiver.ACTION_GAMEPAD);
             PendingIntent configPendingIntent =
                     PendingIntent.getBroadcast(getApplicationContext(), 2, configIntent, 0);
+            PendingIntent gamepadPendingIntent =
+                    PendingIntent.getBroadcast(getApplicationContext(), 3, gamepadIntent, 0);
 
             String title = "Show Hacker's Keyboard";
             String body = "Select this to open the keyboard. Disable in settings.";
@@ -544,6 +561,8 @@ public class LatinIME extends InputMethodService implements
                     .setOngoing(true)
                     .addAction(R.drawable.icon_hk_notification, getString(R.string.notification_action_settings),
                             configPendingIntent)
+                    .addAction(R.drawable.icon_hk_notification, "gamepad",
+                            gamepadPendingIntent)
                     .setPriority(NotificationCompat.PRIORITY_DEFAULT);
 
             /*
@@ -751,15 +770,18 @@ public class LatinIME extends InputMethodService implements
 
         return mCandidateViewAndKeyboardView;
     }
+
     /**
-     *  AI_GENERATED
+     * For createWindowManager, hideFloatingKeyboard, createFloatingKeyboard methods. This methods are mix of ai and stackoverflow
+     * AI_GENERATED
      * RESPONSE_ID: 0
      * MODEL: gemini-2.5-pro
      * PROMPT_LANGUAGE: RU
      * PROMPT:Caused by: java.lang.IllegalArgumentException: Window type mismatch. Window Context's window type is 2011, while LayoutParams' type is set to 2038. Please create another Window Context via createWindowContext(getDisplay(), 2038, null) to add window with type:2038 как исправить
-    */
-    @RequiresApi(api = Build.VERSION_CODES.O)//THIS CODE IS BAD, MIX OF AI AND STACKOVERFLOW
-    private void createFloatingKeyboard() {
+     */
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    private void createWindowManager() {
+        if (mWindowManager!=null)return;
         // Получаем DisplayManager и основной дисплей
         DisplayManager displayManager = (DisplayManager) getSystemService(Context.DISPLAY_SERVICE);
         Display primaryDisplay = displayManager.getDisplay(Display.DEFAULT_DISPLAY);
@@ -773,13 +795,33 @@ public class LatinIME extends InputMethodService implements
             windowContext = displayContext.createWindowContext(WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY, null);
             mWindowManager = (WindowManager) windowContext.getSystemService(Context.WINDOW_SERVICE);
         }
+        else{
+            mWindowManager = (WindowManager)getSystemService(WINDOW_SERVICE);
+        }
+    }
 
+        @RequiresApi(api = Build.VERSION_CODES.O)
+    public void hideFloatingKeyboard() {
+            if(!mFloatingKeyboardShown)return;
+            if(mNormalKeyboardShown)return;
+
+            createWindowManager();
+            mWindowManager.removeView(mFloatingKeyboard);
+            setInputView(mCandidateViewAndKeyboardView);
+            mFloatingKeyboardShown=false;
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.O)//THIS CODE IS BAD, MIX OF AI AND STACKOVERFLOW
+    private void createFloatingKeyboardView() {
+        if(mFloatingKeyboardShown)return;
+        if (mNormalKeyboardShown)return;
+        createWindowManager();
         // fetch window manager object
 
         // set layout parameter of window manager
         mParams = new WindowManager.LayoutParams(
-                WindowManager.LayoutParams.MATCH_PARENT, // width is equal to full screen
-                WindowManager.LayoutParams.WRAP_CONTENT, // height is equal to full screen
+                WindowManager.LayoutParams.MATCH_PARENT, // width
+                WindowManager.LayoutParams.WRAP_CONTENT, // height
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY, //
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE, // this window won't ever get key input focus
                 PixelFormat.TRANSLUCENT
@@ -787,12 +829,207 @@ public class LatinIME extends InputMethodService implements
 
 
         mParams.gravity = Gravity.BOTTOM;
-        if(!floatingKeyboardShown) {
-            mWindowManager.addView(mCandidateViewAndKeyboardView, mParams);
-            floatingKeyboardShown=true;
-        }
-    }
+        if (mKeyboardType==KeyboardType.keyboard)mFloatingKeyboard=mCandidateViewAndKeyboardView;
+        else if (mKeyboardType==KeyboardType.gamepad_zxc_under_v1_0)mFloatingKeyboard=createGamepad();
+        else mFloatingKeyboard=mCandidateViewAndKeyboardView;
+        mWindowManager.addView(mFloatingKeyboard, mParams);
+        mFloatingKeyboardShown=true;
 
+    }
+    private View createZxcButtonsGamepad(){
+        InputConnection ic= getCurrentInputConnection();
+        View.OnTouchListener buttonlistener = new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                Button b = (Button)v;
+                int keycode=KeyEvent.KEYCODE_UNKNOWN;
+                if (b.getText().equals("z"))keycode=13;
+                if (b.getText().equals("x"))keycode=16;
+                if (b.getText().equals("c"))keycode=17;
+                if (event.getAction()==MotionEvent.ACTION_DOWN)
+                    ic.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN,keycode));
+                if (event.getAction()==MotionEvent.ACTION_UP)
+                    ic.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_UP,keycode));
+                return true;
+            }
+        };
+
+        int buttonSize = (int) TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_MM, 10, getResources().getDisplayMetrics());
+        LinearLayout buttons=new LinearLayout(this);
+        buttons.setOrientation(LinearLayout.HORIZONTAL);
+        buttons.setGravity(Gravity.CENTER);
+
+        LinearLayout.LayoutParams buttonParams = new LinearLayout.LayoutParams
+                (buttonSize, buttonSize);
+
+        int paddingSize = (int) TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_MM, 2, getResources().getDisplayMetrics());
+
+
+        buttonParams.setMargins(paddingSize,paddingSize,paddingSize,paddingSize);
+
+        Button z= new Button(this);
+        Button x= new Button(this);
+        Button c= new Button(this);
+
+        z.setText("z");
+        x.setText("x");
+        c.setText("c");
+
+        z.setOnTouchListener(buttonlistener);
+        x.setOnTouchListener(buttonlistener);
+        c.setOnTouchListener(buttonlistener);
+
+        buttons.addView(z,buttonParams);
+        buttons.addView(x,buttonParams);
+        buttons.addView(c,buttonParams);
+        return buttons;
+    }
+    @SuppressLint({"SetTextI18n", "ClickableViewAccessibility"})
+    private View createABCXYZButtonsGamepad(){
+        InputConnection ic= getCurrentInputConnection();
+        View.OnTouchListener buttonlistener = new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                Button b = (Button)v;
+                int keycode=KeyEvent.KEYCODE_UNKNOWN;
+                if (b.getText().equals("a"))keycode=KeyEvent.KEYCODE_BUTTON_A;
+                else if (b.getText().equals("b"))keycode=KeyEvent.KEYCODE_BUTTON_B;
+                else if (b.getText().equals("c"))keycode=KeyEvent.KEYCODE_BUTTON_C;
+                else if (b.getText().equals("x"))keycode=KeyEvent.KEYCODE_BUTTON_X;
+                else if (b.getText().equals("y"))keycode=KeyEvent.KEYCODE_BUTTON_Y;
+                else if (b.getText().equals("z"))keycode=KeyEvent.KEYCODE_BUTTON_Z;
+                else if (b.getText().equals("select"))keycode=KeyEvent.KEYCODE_BUTTON_SELECT;
+                else if (b.getText().equals("start"))keycode=KeyEvent.KEYCODE_BUTTON_START;
+
+                if (event.getAction()==MotionEvent.ACTION_DOWN)
+                    ic.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN,keycode));
+                else if (event.getAction()==MotionEvent.ACTION_UP)
+                    ic.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_UP,keycode));
+                return true;
+            }
+        };
+
+        int buttonSize = (int) TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_MM, 10, getResources().getDisplayMetrics());
+        LinearLayout.LayoutParams buttonParams = new LinearLayout.LayoutParams
+                (buttonSize, buttonSize);
+        int paddingSize = (int) TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_MM, 2, getResources().getDisplayMetrics());
+        buttonParams.setMargins(paddingSize,paddingSize,paddingSize,paddingSize);
+
+
+        int select_start_height = (int) TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_MM, 6F, getResources().getDisplayMetrics());
+        int select_start_width = (int) TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_MM, 15F, getResources().getDisplayMetrics());
+        LinearLayout.LayoutParams select_start_params = new LinearLayout.LayoutParams
+                (select_start_width, select_start_height);
+        int select_start_paddingSize = (int) TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_MM, 1, getResources().getDisplayMetrics());
+        select_start_params.setMargins(select_start_paddingSize,select_start_paddingSize,select_start_paddingSize,select_start_paddingSize);
+
+
+        LinearLayout buttonsDown=new LinearLayout(this);
+        LinearLayout buttonsUp=new LinearLayout(this);
+        LinearLayout select_and_start = new LinearLayout(this);
+
+        buttonsDown.setOrientation(LinearLayout.HORIZONTAL);
+        buttonsDown.setGravity(Gravity.CENTER);
+        buttonsUp.setOrientation(LinearLayout.HORIZONTAL);
+        buttonsUp.setGravity(Gravity.CENTER);
+
+
+
+
+
+        Button a= new Button(this);
+        Button b= new Button(this);
+        Button c= new Button(this);
+        Button x= new Button(this);
+        Button y= new Button(this);
+        Button z= new Button(this);
+        Button select = new Button(this);
+        Button start = new Button(this);
+
+
+        a.setText("a");
+        b.setText("b");
+        c.setText("c");
+        x.setText("x");
+        y.setText("y");
+        z.setText("z");
+        select.setText("select");
+        start.setText("start");
+
+
+        a.setOnTouchListener(buttonlistener);
+        b.setOnTouchListener(buttonlistener);
+        c.setOnTouchListener(buttonlistener);
+        x.setOnTouchListener(buttonlistener);
+        y.setOnTouchListener(buttonlistener);
+        z.setOnTouchListener(buttonlistener);
+        select.setOnTouchListener(buttonlistener);
+        start.setOnTouchListener(buttonlistener);
+
+        buttonsDown.addView(a,buttonParams);
+        buttonsDown.addView(b,buttonParams);
+        buttonsDown.addView(c,buttonParams);
+        buttonsUp.addView(x,buttonParams);
+        buttonsUp.addView(y,buttonParams);
+        buttonsUp.addView(z,buttonParams);
+        select_and_start.addView(select,select_start_params);
+        select_and_start.addView(start,select_start_params);
+
+
+
+
+        FrameLayout frameLayout = new FrameLayout(this);
+        FrameLayout.LayoutParams layoutParams=new FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT,FrameLayout.LayoutParams.WRAP_CONTENT);
+        layoutParams.gravity = Gravity.BOTTOM|Gravity.CENTER_HORIZONTAL;
+
+
+        LinearLayout abcxyz_Keys = new LinearLayout(this);
+
+        abcxyz_Keys.setOrientation(LinearLayout.VERTICAL);
+        abcxyz_Keys.setGravity(Gravity.CENTER);
+        abcxyz_Keys.addView(buttonsUp);
+        abcxyz_Keys.addView(buttonsDown);
+
+        frameLayout.addView(abcxyz_Keys);
+        frameLayout.addView(select_and_start,layoutParams);
+
+        return frameLayout;
+    }
+    @SuppressLint("ClickableViewAccessibility")
+    private View createGamepad() {
+        InputConnection ic= getCurrentInputConnection();
+        DPadView dpad = new DPadView(this,DPadView.DEADZONE_CIRCLE,0.1F, getCurrentInputConnection());
+
+
+
+        View buttons = createABCXYZButtonsGamepad();
+        double heightMultiplier;
+
+        if (getResources().getDisplayMetrics().widthPixels>getResources().getDisplayMetrics().heightPixels){
+            heightMultiplier=0.75;
+        }
+        else {
+            heightMultiplier=0.25;
+        }
+        LinearLayout linearLayout=new LinearLayout(this);
+        linearLayout.setOrientation(LinearLayout.HORIZONTAL);
+        LinearLayout.LayoutParams gamepadParams = new LinearLayout.LayoutParams
+                (getResources().getDisplayMetrics().widthPixels/2, (int) (getResources().getDisplayMetrics().heightPixels*heightMultiplier),1);
+
+        linearLayout.addView(dpad,gamepadParams);
+        linearLayout.addView(buttons,gamepadParams);
+
+
+
+        return linearLayout;
+    }
     @Override
     public AbstractInputMethodImpl onCreateInputMethodInterface() {
     	return new MyInputMethodImpl();
@@ -846,13 +1083,29 @@ public class LatinIME extends InputMethodService implements
         mDeleteCount = 0;
         mJustAddedAutoSpace = false;
     }
-    
+    public void startFloatingKeyboard(boolean isGamepad){
+        if(mFloatingKeyboardShown)return;
+        if (mNormalKeyboardShown)return;
+        mKeyboardClosingLock=true;
+        if (isGamepad)mKeyboardType=KeyboardType.gamepad_zxc_under_v1_0;
+        else mKeyboardType=KeyboardType.keyboard;
+        onStartInputView(new EditorInfo(),false);
+
+
+    }
     @Override
     public void onStartInputView(EditorInfo attribute, boolean restarting) {
-        if (keyboardClosingLock && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
-            setInputView(new View(this));
-            createFloatingKeyboard();
+        if(mFloatingKeyboardShown)return;
+        if (mNormalKeyboardShown)return;
 
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && mKeyboardClosingLock) {
+            setInputView(new View(this));
+            createFloatingKeyboardView();
+            mFloatingKeyboardShown=true;
+        }
+        else {
+            mNormalKeyboardShown=true;
         }
         sKeyboardSettings.editorPackageName = attribute.packageName;
         sKeyboardSettings.editorFieldName = attribute.fieldName;
@@ -1013,6 +1266,8 @@ public class LatinIME extends InputMethodService implements
         // If we just entered a text field, maybe it has some old text that
         // requires correction
         checkReCorrectionOnStart();
+
+
     }
 
     private boolean shouldShowVoiceButton(EditorInfo attribute) {
@@ -1050,9 +1305,8 @@ public class LatinIME extends InputMethodService implements
 
     @Override
     public void onFinishInput() {
-        if(keyboardClosingLock)return;
-        Log.d(TAG, "onFinishInput: "+ keyboardClosingLock);
-
+        if(mKeyboardClosingLock)return;
+        if(mFloatingKeyboardShown)return;
         super.onFinishInput();
 
         onAutoCompletionStateChanged(false);
@@ -1063,18 +1317,18 @@ public class LatinIME extends InputMethodService implements
             mAutoDictionary.flushPendingWrites();
         if (mUserBigramDictionary != null)
             mUserBigramDictionary.flushPendingWrites();
-
-
-        keyboardClosingLock =false;
-
+        mNormalKeyboardShown=false;
     }
 
     @Override
     public void onFinishInputView(boolean finishingInput) {
+        if(mFloatingKeyboardShown)return;
+        if(mKeyboardClosingLock)return;
         super.onFinishInputView(finishingInput);
         // Remove penging messages related to update suggestions
         mHandler.removeMessages(MSG_UPDATE_SUGGESTIONS);
         mHandler.removeMessages(MSG_UPDATE_OLD_SUGGESTIONS);
+        mNormalKeyboardShown=false;
     }
 
     @Override
@@ -1572,15 +1826,6 @@ public class LatinIME extends InputMethodService implements
     }
 
     private void onOptionKeyPressed() {
-        if (keyboardClosingLock ||floatingKeyboardShown){
-            if(!keyboardClosingLock)floatingKeyboardShown=false;//FIXME GOVNOKOD THIS CODE IS PIECE OF SHIT
-            keyboardClosingLock =false;
-
-            if(floatingKeyboardShown)onFinishInput();//onFinishInput calls onKey
-            mWindowManager.removeView(mCandidateViewAndKeyboardView);
-            setInputView(mCandidateViewAndKeyboardView);
-            return;
-        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             // Input method selector is available as a button in the soft key area, so just launch
             // HK settings directly. This also works around the alert dialog being clipped
