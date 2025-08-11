@@ -807,6 +807,7 @@ public class LatinIME extends InputMethodService implements
 
             createWindowManager();
             mWindowManager.removeView(mFloatingKeyboard);
+            if(mCandidateViewAndKeyboardView==null)onCreateInputView();
             setInputView(mCandidateViewAndKeyboardView);
             mFloatingKeyboardShown=false;
     }
@@ -954,6 +955,15 @@ public class LatinIME extends InputMethodService implements
         Button start = new Button(this);
 
 
+        a.setBackgroundColor(0x80808080);
+        b.setBackgroundColor(0x80808080);
+        c.setBackgroundColor(0x80808080);
+        x.setBackgroundColor(0x80808080);
+        y.setBackgroundColor(0x80808080);
+        z.setBackgroundColor(0x80808080);
+        select.setBackgroundColor(0x80808080);
+        start.setBackgroundColor(0x80808080);
+
         a.setText("a");
         b.setText("b");
         c.setText("c");
@@ -962,6 +972,9 @@ public class LatinIME extends InputMethodService implements
         z.setText("z");
         select.setText("select");
         start.setText("start");
+
+
+
 
 
         a.setOnTouchListener(buttonlistener);
