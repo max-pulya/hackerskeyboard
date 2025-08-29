@@ -1,15 +1,26 @@
 ## Patches from Pulya Max ##
-Removed signature check on main thread
+Candidates bar work on modern android versions(tested on android 15)
+
+Added commands in candidates bar. /del erases entire text
+
+Show keyboard notification work on modern android versions(tested on android 15)
+
+Added virtual gamepad function(like gamepad and gamekeyboard apps, uses sega md key layout)
 
 Added ctrl+backspace hotkey
 
-Fixed switch-case: constant expression required error. 
-
-Fixed build in Android Studio 2024. 
-
-(For multiply lanuages) Force english when modifier keys pressed. 
-
 Settings Tab Hack(Tab enters DNS server writed in code)
+
+Fixed build in Android Studio 2024: added missing gradle files and fixed "switch-case: constant expression required" error. 
+
+Numeric row is shown by default
+
+language specific patches:
+
+(For non english and non qwerty keyboards) Force english qwerty keyboard when modifier keys pressed. 
+
+ё1234567890 numeric row on russian keyboard 
+
 
 ## Overview ##
 
