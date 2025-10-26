@@ -2749,9 +2749,13 @@ public class LatinIME extends InputMethodService implements
                 // could be either auto-caps or manual shift.
                 mWord.setFirstCharCapitalized(true);
             }
+            InputConnection ic = getCurrentInputConnection();
+            if(EditingUtil.textViewIsEmpty(ic)){
+                mComposing=new StringBuilder();
+                mWord=new WordComposer();
+            }
             mComposing.append((char) primaryCode);
             mWord.add(primaryCode, keyCodes);
-            InputConnection ic = getCurrentInputConnection();
             if (ic != null) {
                 // If it's the first letter, make note of auto-caps state
                 if (mWord.size() == 1) {
