@@ -2340,6 +2340,14 @@ public class LatinIME extends InputMethodService implements
     // Implementation of KeyboardViewListener
 
     public void onKey(int primaryCode, int[] keyCodes, int x, int y) {
+
+        InputConnection ic =getCurrentInputConnection();//This check prevents from text to
+        if(EditingUtil.textViewIsEmpty(ic)){
+            mComposing=new StringBuilder();
+            mWord=new WordComposer();
+            mBestWord=null;
+        }
+
         long when = SystemClock.uptimeMillis();
         if (primaryCode != Keyboard.KEYCODE_DELETE
                 || when > mLastKeyTime + QUICK_PRESS) {
@@ -2677,7 +2685,7 @@ public class LatinIME extends InputMethodService implements
     private static int getCapsOrShiftLockState() {
         return sKeyboardSettings.capsLock ? Keyboard.SHIFT_CAPS_LOCKED : Keyboard.SHIFT_LOCKED;
     }
-    
+
     // Rotate through shift states by successively pressing and releasing the Shift key.
     private static int nextShiftState(int prevState, boolean allowCapsLock) {
         if (allowCapsLock) {
