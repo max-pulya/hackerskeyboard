@@ -503,7 +503,7 @@
         <item>1</item>
         <item>2</item>
     </string-array>
-    <string name="default_hint_mode">1</string>
+    <string name="default_hint_mode">2</string>
 
     <string name="title_touch_pos">Debug touch screen position</string>
     <string name="summary_touch_pos_true">Show feedback for touch screen location</string>
