@@ -27,7 +27,7 @@
     <Row android:extension="true">
         <Key android:keyLabel="ё" android:shiftLabel="Ё"
             android:popupKeyboard="@xml/kbd_popup_template"
-            android:popupCharacters="~"
+            android:popupCharacters="`~"
             android:keyWidth="8.75%p"
             android:keyEdgeFlags="left" />/>
         <Key android:keyLabel="1" android:shiftLabel="!" />
@@ -63,7 +63,7 @@
         <Key
             android:keyLabel="е"
             android:popupKeyboard="@xml/kbd_popup_template"
-            android:popupCharacters="@string/alternates_for_cyrillic_e" />
+            android:popupCharacters="5" />
         <Key
             android:keyLabel="н"
             android:popupKeyboard="@xml/kbd_popup_template"
