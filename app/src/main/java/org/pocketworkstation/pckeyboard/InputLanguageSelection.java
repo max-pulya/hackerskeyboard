@@ -72,7 +72,7 @@ public class InputLanguageSelection extends PreferenceActivity {
         "el", "en", "en_CX", "en_DV", "en_GB", "en_RU", "es", "es_LA", "es_US",
         "fa", "fi", "fr", "fr_CA", "he", "hr", "hu", "hu_QY", "hy", "in",
         "it", "iw", "ja", "ka", "ko", "lo", "lt", "lv", "nb", "nl", "pl",
-        "pt", "pt_PT", "rm", "ro", "ru", "ru_PH", "si", "sk", "sk_QY", "sl",
+        "pt", "pt_PT", "rm", "ro", "ru", "ru_PH","ru_EN", "si", "sk", "sk_QY", "sl",
         "sr", "sv", "ta", "th", "tl", "tr", "uk", "vi", "zh_CN", "zh_TW"
     };
 
@@ -80,14 +80,14 @@ public class InputLanguageSelection extends PreferenceActivity {
         "ar", "bg", "bg_ST", "cs", "cs_QY", "da", "de", "de_NE", "el",
         "en", "en_CX", "en_DV", "en_GB", "en_RU", "es", "es_LA", "fa", "fi", "fr",
         "fr_CA", "he", "hr", "hu", "hu_QY", "hy", "it", "iw", "lo", "lt",
-        "nb", "pt_PT", "ro", "ru", "ru_PH", "si", "sk", "sk_QY", "sl",
+        "nb", "pt_PT", "ro", "ru", "ru_PH", "ru_EN", "si", "sk", "sk_QY", "sl",
         "sr", "sv", "ta", "th", "tr", "uk"
     };
 
     private static final String[] KBD_4_ROW = {
         "ar", "bg", "bg_ST", "cs", "cs_QY", "da", "de", "de_NE", "el",
         "en", "en_CX", "en_DV", "en_RU", "es", "es_LA", "es_US", "fa", "fr", "fr_CA",
-        "he", "hr", "hu", "hu_QY", "iw", "nb", "ru", "ru_PH", "sk", "sk_QY",
+        "he", "hr", "hu", "hu_QY", "iw", "nb", "ru", "ru_PH", "ru_EN", "sk", "sk_QY",
         "sl", "sr", "sv", "tr", "uk"
     };
 
@@ -101,7 +101,7 @@ public class InputLanguageSelection extends PreferenceActivity {
         } else if (lang.equals("en") && country.equals("CX")) {
                 return "English (Carpalx)";
         } else if (lang.equals("en") && country.equals("RU")) {
-                return "English/Русская(Для ввода паролей)";
+                return "English with Russian symbols";
         } else if (lang.equals("es") && country.equals("LA")) {
             return "Español (Latinoamérica)";
         } else if (lang.equals("cs") && country.equals("QY")) {
@@ -114,6 +114,8 @@ public class InputLanguageSelection extends PreferenceActivity {
             return "Slovenčina (QWERTY)";
         } else if (lang.equals("ru") && country.equals("PH")) {
             return "Русский (Phonetic)";
+        } else if (lang.equals("ru") && country.equals("EN")) {
+                return "Русский (для паролей)";
         } else if (lang.equals("bg")) {
             if (country.equals("ST")) {
                 return "български език (Standard)";
