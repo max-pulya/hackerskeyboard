@@ -3048,6 +3048,7 @@ public class LatinIME extends InputMethodService implements
 
 
     public void pickSuggestionManually(int index) {
+        boolean suppressAutospace;
         List<CharSequence> suggestions = mCandidateView.getSuggestions();
         List<CharSequence> suggestions_FullText = mCandidateView.getSuggestions_fullText();
         CharSequence suggestion;
@@ -3094,7 +3095,7 @@ public class LatinIME extends InputMethodService implements
             return;
         }
         mJustAccepted = true;
-        pickSuggestion(suggestion, correcting);
+        suppressAutospace=pickSuggestion(suggestion, correcting);
         // Add the word to the auto dictionary if it's not a known word
         if (index == 0) {
             addToDictionaries(suggestion, AutoDictionary.FREQUENCY_FOR_PICKED);
@@ -3103,7 +3104,7 @@ public class LatinIME extends InputMethodService implements
         }
         TextEntryState.acceptedSuggestion(mComposing.toString(), suggestion);
         // Follow it with a space
-        if (mAutoSpace && !correcting) {
+        if (mAutoSpace && !suppressAutospace && !correcting) {
             sendSpace();
             mJustAddedAutoSpace = true;
         }
@@ -3148,10 +3149,15 @@ public class LatinIME extends InputMethodService implements
      *            field
      * @param correcting
      *            whether this is due to a correction of an existing word.
+     * @return
+     *       boolean suppressAutospace
+     *       false - you should place space after suggestion is picked
+     *       true - you should not place space after suggestion is picked
      */
-    private void pickSuggestion(CharSequence suggestion, boolean correcting) {
+    private boolean pickSuggestion(CharSequence suggestion, boolean correcting) {
         LatinKeyboardView inputView = mKeyboardSwitcher.getInputView();
         int shiftState = getShiftState();
+        boolean suppressAutospace= false;
         if (shiftState == Keyboard.SHIFT_LOCKED || shiftState == Keyboard.SHIFT_CAPS_LOCKED) {
             suggestion = suggestion.toString().toUpperCase(); // all UPPERCASE
         }
@@ -3171,7 +3177,9 @@ public class LatinIME extends InputMethodService implements
         updateShiftKeyState(getCurrentInputEditorInfo());
         if(suggestion.equals("/del")){
             EditingUtil.SetText(ic,"");
+            suppressAutospace=true;
         }
+        return suppressAutospace;
     }
 
     /**
