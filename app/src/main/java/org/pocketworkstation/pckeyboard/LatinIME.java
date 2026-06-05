@@ -2340,6 +2340,14 @@ public class LatinIME extends InputMethodService implements
     // Implementation of KeyboardViewListener
 
     public void onKey(int primaryCode, int[] keyCodes, int x, int y) {
+
+        InputConnection ic =getCurrentInputConnection();//This check prevents from text to
+        if(EditingUtil.textViewIsEmpty(ic)){
+            mComposing=new StringBuilder();
+            mWord=new WordComposer();
+            mBestWord=null;
+        }
+
         long when = SystemClock.uptimeMillis();
         if (primaryCode != Keyboard.KEYCODE_DELETE
                 || when > mLastKeyTime + QUICK_PRESS) {
@@ -2386,8 +2394,8 @@ public class LatinIME extends InputMethodService implements
                 setModMeta(!mModMeta);
             break;
         case LatinKeyboardView.KEYCODE_FN:
-            if (!distinctMultiTouch)
-                setModFn(!mModFn);
+            //*//Pulya max: Fix of changing keyboard mode if extension is enabled
+            setModFn(!mModFn);
             break;
         case Keyboard.KEYCODE_CANCEL:
             if (!isShowingOptionDialog()) {
@@ -2677,7 +2685,7 @@ public class LatinIME extends InputMethodService implements
     private static int getCapsOrShiftLockState() {
         return sKeyboardSettings.capsLock ? Keyboard.SHIFT_CAPS_LOCKED : Keyboard.SHIFT_LOCKED;
     }
-    
+
     // Rotate through shift states by successively pressing and releasing the Shift key.
     private static int nextShiftState(int prevState, boolean allowCapsLock) {
         if (allowCapsLock) {
@@ -3720,7 +3728,7 @@ public class LatinIME extends InputMethodService implements
             sendMetaKey(ic, true, true);
         } else if (distinctMultiTouch
                 && primaryCode == LatinKeyboardView.KEYCODE_FN) {
-            setModFn(!mModFn);
+            //*//setModFn(!mModFn);        Pulya max: Fix of changing keyboard mode if extension is enabled
             mFnKeyState.onPress();
         } else {
             mShiftKeyState.onOtherKeyPressed();
@@ -3779,9 +3787,9 @@ public class LatinIME extends InputMethodService implements
             mMetaKeyState.onRelease();
         } else if (distinctMultiTouch
                 && primaryCode == LatinKeyboardView.KEYCODE_FN) {
-            if (mFnKeyState.isChording()) {
+            /*if (mFnKeyState.isChording()) {
                 setModFn(false);
-            }
+            }*/
             mFnKeyState.onRelease();
         }
         // WARNING: Adding a chording modifier key? Make sure you also

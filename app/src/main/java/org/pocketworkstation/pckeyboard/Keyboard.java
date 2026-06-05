@@ -827,7 +827,12 @@ public class Keyboard {
      */
     public Keyboard(Context context, int defaultHeight, int xmlLayoutResId, int modeId, float kbHeightPercent) {
         DisplayMetrics dm = context.getResources().getDisplayMetrics();
-        mDisplayWidth = dm.widthPixels;
+        if (context instanceof LatinIME){
+            LatinIME l=(LatinIME)context;
+            mDisplayWidth = l.getMaxWidth();//DisplayMetrics on Android 15 gives width that includes display cutout, because google forced edge to edge. getMaxWidth gives correct width
+        }
+        else mDisplayWidth = dm.widthPixels;
+
         mDisplayHeight = dm.heightPixels;
         Log.v(TAG, "keyboard's display metrics:" + dm + ", mDisplayWidth=" + mDisplayWidth);
 
