@@ -20,7 +20,7 @@
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="alternates_for_a">ф</string>
     <string name="alternates_for_b">и</string>
-    <string name="alternates_for_c">ц</string>
+    <string name="alternates_for_c">с</string>
     <string name="alternates_for_d">в</string>
     <string name="alternates_for_e">у</string>
     <string name="alternates_for_f">а</string>
