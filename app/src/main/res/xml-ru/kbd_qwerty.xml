@@ -31,15 +31,15 @@
             android:keyWidth="8.75%p"
             android:keyEdgeFlags="left" />/>
         <Key android:keyLabel="1" android:shiftLabel="!" />
-        <Key android:keyLabel="2" android:shiftLabel="\@" />
-        <Key android:keyLabel="3" android:shiftLabel="\#" />
-        <Key android:keyLabel="4" android:shiftLabel="&amp;" />
-        <Key android:keyLabel="5" android:shiftLabel="-" />
-        <Key android:keyLabel="6" android:shiftLabel="\'" />
-        <Key android:keyLabel="7" android:shiftLabel=":" />
-        <Key android:keyLabel="8" android:shiftLabel="&quot;" />
-        <Key android:keyLabel="9" android:shiftLabel="/" />
-        <Key android:keyLabel="0" android:shiftLabel="\?" />
+        <Key android:keyLabel="2" android:shiftLabel="&quot;" />
+        <Key android:keyLabel="3" android:shiftLabel="№" />
+        <Key android:keyLabel="4" android:shiftLabel=";" />
+        <Key android:keyLabel="5" android:shiftLabel="%" />
+        <Key android:keyLabel="6" android:shiftLabel=":" />
+        <Key android:keyLabel="7" android:shiftLabel="\?" />
+        <Key android:keyLabel="8" android:shiftLabel="*" />
+        <Key android:keyLabel="9" android:shiftLabel="(" />
+        <Key android:keyLabel="0" android:shiftLabel=")" />
     </Row>
     <Row>
         <Key

@@ -1418,7 +1418,7 @@ public class LatinIME extends InputMethodService implements
             }
         }
     }
-
+    //TODO REMOVE THIS USELESS CODE BECAUSE CANDIDATES VIEW IS REMOVED
     /**
      * This is called when the user has clicked on the extracted text view, when
      * running in fullscreen mode. The default implementation hides the
