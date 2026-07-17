@@ -22,7 +22,6 @@ import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.preference.PreferenceManager;
 import android.text.TextUtils;
-import android.util.Log;
 
 /**
  * Keeps track of list of selected input languages and the current
@@ -225,15 +224,35 @@ public class LanguageSwitcher {
         if (mCurrentIndex < 0) mCurrentIndex = mLocales.length - 1; // Wrap around
     }
     //*// Added by Pulya Max
-    public void p_max_force_en(){
+
+    /**
+     * @return boolean
+     * true if language changed, false if not
+     */
+    public boolean force_en(){
+        if (mCurrentIndex==mEnglishIndex) return false;
+
         mLangChangedByUser=false;
         mPreviousIndex=mCurrentIndex;
         mCurrentIndex=mEnglishIndex;
+        return true;
     }
-    public void p_max_previous_lang(){
-        if(!mLangChangedByUser)mCurrentIndex=mPreviousIndex;
+    /**
+     * @return boolean
+     * true if language changed, false if not
+     */
+    public boolean restore_previous_lang(){
+        if(!mLangChangedByUser){
+            mCurrentIndex=mPreviousIndex;
+            return true;
+        };
+        return false;
     }
     //*//
+    public boolean is_english(){
+        return mCurrentIndex==mEnglishIndex;
+    }
+
     public void persist() {
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(mIme);
         Editor editor = sp.edit();

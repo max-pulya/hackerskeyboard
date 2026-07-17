@@ -736,6 +736,10 @@ public class LatinIME extends InputMethodService implements
             if (ic != null)
                 ic.finishComposingText(); // For voice input
             mOrientation = conf.orientation;
+
+            if (isPortrait())sKeyboardSettings.useExtension = true;
+            else sKeyboardSettings.useExtension = false;
+
             reloadKeyboards();
             removeCandidateViewContainer();
         }
@@ -1177,7 +1181,8 @@ public class LatinIME extends InputMethodService implements
         mSuggestionForceOff = false;
         mKeyboardModeOverridePortrait = 0;
         mKeyboardModeOverrideLandscape = 0;
-        sKeyboardSettings.useExtension = true;
+        if (isPortrait())sKeyboardSettings.useExtension = true;
+        else sKeyboardSettings.useExtension = false;
 
         switch (attribute.inputType & EditorInfo.TYPE_MASK_CLASS) {
         case EditorInfo.TYPE_CLASS_NUMBER:
@@ -2613,6 +2618,7 @@ public class LatinIME extends InputMethodService implements
         mKeyboardSwitcher.setCtrlIndicator(mModCtrl);
         mKeyboardSwitcher.setAltIndicator(mModAlt);
         mKeyboardSwitcher.setMetaIndicator(mModMeta);
+
     }
     private void setModCtrl(boolean val) {
 
@@ -3471,13 +3477,17 @@ public class LatinIME extends InputMethodService implements
     public boolean preferCapitalization() {
         return mWord.isFirstCharCapitalized();
     }
-    //*// Patched by Pulya Max                                                   //*//
-    //*// reset=false,force_en=true toggles english when mod keys pressed        //*//
-    //*// reset=true,force_en=true toggles previous lang when mod keys releasing //*//
-    //*// Indicator sets when language changed
+    /**
+     * <p>Patched by Pulya Max</p>
+     * <p>reset=false,force_en=true toggles english when mod keys pressed.</p>
+     * <p>eset=true,force_en=true toggles previous lang when mod keys releasing</p>
+     * <p>Indicator sets when language changed</p>
+     */
     void toggleLanguage(boolean reset, boolean next,boolean force_en) {
-        if (force_en&&!reset)mLanguageSwitcher.p_max_force_en();
-        else if (force_en)mLanguageSwitcher.p_max_previous_lang();
+        boolean lang_changed=true;
+        int shiftState = getShiftState();
+        if (force_en&&!reset)lang_changed=mLanguageSwitcher.force_en();
+        else if (force_en)lang_changed=mLanguageSwitcher.restore_previous_lang();
         else{
                 if (reset) {
                 mLanguageSwitcher.reset();
@@ -3489,18 +3499,20 @@ public class LatinIME extends InputMethodService implements
                 }
             }
         }
-        int currentKeyboardMode = mKeyboardSwitcher.getKeyboardMode();
-        reloadKeyboards();
-        mKeyboardSwitcher.makeKeyboards(true);
-        mKeyboardSwitcher.setKeyboardMode(currentKeyboardMode, 0,
-                mEnableVoiceButton && mEnableVoice);
-        initSuggest(mLanguageSwitcher.getInputLanguage());
-        mLanguageSwitcher.persist();
-        mAutoCapActive = mAutoCapPref && mLanguageSwitcher.allowAutoCap();
-        mDeadKeysActive = mLanguageSwitcher.allowDeadKeys();
-        updateShiftKeyState(getCurrentInputEditorInfo());
-        setCandidatesViewShown(isPredictionOn());
-        p_max_set_indicators();
+        if(lang_changed) {
+            int currentKeyboardMode = mKeyboardSwitcher.getKeyboardMode();
+            reloadKeyboards();
+            mKeyboardSwitcher.makeKeyboards(true);
+            mKeyboardSwitcher.setKeyboardMode(currentKeyboardMode, 0,
+                    mEnableVoiceButton && mEnableVoice);
+            initSuggest(mLanguageSwitcher.getInputLanguage());
+            mLanguageSwitcher.persist();
+            mAutoCapActive = mAutoCapPref && mLanguageSwitcher.allowAutoCap();
+            mDeadKeysActive = mLanguageSwitcher.allowDeadKeys();
+            updateShiftKeyState(getCurrentInputEditorInfo());
+            setCandidatesViewShown(isPredictionOn());
+            p_max_set_indicators();
+        }
     }
 
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,

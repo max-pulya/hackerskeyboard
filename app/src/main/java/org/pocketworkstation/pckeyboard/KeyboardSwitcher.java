@@ -319,7 +319,7 @@ public class KeyboardSwitcher implements
 
         mCurrentId = id;
         mInputView.setKeyboard(keyboard);
-        keyboard.setShiftState(Keyboard.SHIFT_OFF);
+        keyboard.setShiftState(Keyboard.SHIFT_OFF);// ПРОБЛЕМА ЗДЕСЬ
         keyboard.setImeOptions(mInputMethodService.getResources(), mMode,
                 imeOptions);
         keyboard.updateSymbolIcons(mIsAutoCompletionActive);
